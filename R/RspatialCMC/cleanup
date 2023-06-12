@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Remove the inst/ folder after installation
+rm -rf ./inst/

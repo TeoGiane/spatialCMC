@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package spatialcmc;
+
+/*
+ * State of the Spatial Product Partition process
+ */
+ message sPPState {
+  double totalmass = 1;
+  double lambda = 2;
+}
+
+/*
+ * Prior for the Spatial Product Partition process
+ */
+message sPPPrior {
+  sPPState fixed_value = 1;
+}

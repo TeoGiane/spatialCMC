@@ -1,0 +1,6 @@
+# Ignored files
+.Rhistory
+
+# Ignored folders
+.old/
+ArealData_Scenario2/

@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+import "distribution.proto";
+
+package spatialcmc;
+
+/*
+ * Prior for the parameters of the base measure in a Poisson-Gamma hierarchy
+ */
+message PoissonGammaPrior {
+  oneof prior {
+    bayesmix.GammaDistribution fixed_values = 1;
+  }
+}

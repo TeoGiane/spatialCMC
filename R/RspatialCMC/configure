@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Set RSPATIALCMC_HOME environment variable
+mkdir -p ./inst && echo RSPATIALCMC_HOME=$PWD > ./inst/RspatialCMC.Renviron

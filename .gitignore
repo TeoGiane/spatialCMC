@@ -1,0 +1,8 @@
+# Ignored files
+*.sh
+!R/*.sh
+
+# Ignored folders
+build/
+input/
+output/
