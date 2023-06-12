@@ -1,6 +1,6 @@
 # A Consensus MC Algorithm for Large Areal Data Clustering
 
-**Authors**: Matteo Gianella Alessandra Guglielmi, Fernando Quintana
+**Authors**: Matteo Gianella, Alessandra Guglielmi, Fernando Quintana
 
 ## Summary
 
