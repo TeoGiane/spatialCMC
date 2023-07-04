@@ -118,6 +118,12 @@ void SpatialPartition::merge(const SpatialPartition & rhs) {
 Eigen::VectorXd SpatialPartition::sample(size_t n, bool prior) {
 	// Generate buffer
 	Eigen::VectorXd out(n);
+	// if(hierarchy->get_state_proto()->has_uni_ls_state()){
+	// 	out.resize(n, 2);
+	// } else if (hierarchy->get_state_proto()->has_general_state()){
+	// 	out.resize(n, hierarchy->get_state_proto()->general_state().size());
+	// }
+
 	// Sample
 	for (size_t i = 0; i < n; i++) {
 		if(prior) {
@@ -135,7 +141,7 @@ Eigen::VectorXd SpatialPartition::sample(size_t n, bool prior) {
 // Questa cosa va migliorata perché può dipendere dalla gerarchia
 double SpatialPartition::get_merging_parameter(const ClustState & state) {
 	if(state.has_uni_ls_state()){
-		return state.uni_ls_state().mean();
+		return state.uni_ls_state().mean() / std::sqrt(state.uni_ls_state().var());
 	} else if (state.has_general_state()) {
 		return state.general_state().data(0);
 	} else {

@@ -114,8 +114,6 @@ int main(int argc, char const *argv[]) {
     auto & factory_hier = HierarchyFactory::Instance();
     hierarchy = factory_hier.create_object(args.get<std::string>("--hier-type"));
   }
-  // auto hierarchy = std::make_shared<NNIGHierarchy>();
-  // auto hierarchy = std::make_shared<PoissonGammaHierarchy>();
   
   // Create mixing object
   auto mixing = std::make_shared<sPPMixing>();
@@ -142,6 +140,7 @@ int main(int argc, char const *argv[]) {
   }
 
   // Check - OK
+  // std::cout << "N° of shards: " << shards.size() << std::endl;
   // for (auto && elem : shards) { elem.print(); std::cout << std::endl; }
 
   // Run MCMC samplers in each shard - in parallel --> ConsensusMCSampler::parallel_sample();
@@ -186,8 +185,8 @@ int main(int argc, char const *argv[]) {
   std::cout << std::endl;
 
   // Memory management
-  delete bar;
   google::protobuf::ShutdownProtobufLibrary();
+  delete bar;
 
   // Terminate program with no error
   return 0;

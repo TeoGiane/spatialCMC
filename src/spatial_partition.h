@@ -6,7 +6,7 @@
 #include <deque>
 
 // GEOS C API
-#include <geos_c.h>
+// #include <geos_c.h>
 
 // bayesmix
 #include <src/includes.h>
@@ -74,9 +74,11 @@ class SpatialPartition {
 	void merge(const SpatialPartition & rhs);
 
 	// Generate n samples from the prior or the full conditional of the hierarchy
+	// Eigen::MatrixXd SpatialPartition::sample(size_t n, bool prior);
 	Eigen::VectorXd sample(size_t n, bool prior);
 
 	// Questa cosa va migliorata perché può dipendere dalla gerarchia
+	// Eigen::VectorXd get_merging_parameter(const ClustState & state);
 	double get_merging_parameter(const ClustState & state);
 
 	// Print utility for debug
