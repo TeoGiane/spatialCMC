@@ -189,17 +189,17 @@ std::deque<SpatialPartition> ShardMerger::generate_local_clusters(const size_t &
 
 double ShardMerger::compute_bayes_factor(SpatialPartition & lhs, SpatialPartition & rhs) {
 	// Number of simulations
-	size_t n = 50;
+	size_t n = 100;
 	
 	// Monte Carlo samples from prior and posterior
-	Eigen::VectorXd lhs_prior = lhs.sample(n, true);
-	Eigen::VectorXd rhs_prior = rhs.sample(n, true);
-	Eigen::VectorXd lhs_post = lhs.sample(n, false);
-	Eigen::VectorXd rhs_post = rhs.sample(n, false);
+	auto lhs_prior = lhs.sample(n, true);
+	auto rhs_prior = rhs.sample(n, true);
+	auto lhs_post = lhs.sample(n, false);
+	auto rhs_post = rhs.sample(n, false);
 
 	// Compute quantity of interest
-	Eigen::VectorXd qoi_post = (lhs_post - rhs_post).array().abs() / (lhs_post + rhs_post).array();
-	Eigen::VectorXd qoi_prior = (lhs_prior- rhs_prior).array().abs() / (lhs_prior + rhs_prior).array();
+	Eigen::VectorXd qoi_post = (lhs_post - rhs_post).array().abs(); // / (lhs_post + rhs_post).array();
+	Eigen::VectorXd qoi_prior = (lhs_prior - rhs_prior).array().abs(); // / (lhs_prior + rhs_prior).array();
 
 	// Compute epsilon dynamically
 	double epsilon = stan::math::quantile(qoi_prior, 0.5);
