@@ -80,7 +80,7 @@ mix_params =
   "
   fixed_value {
     totalmass: 1.0
-    lambda: 0.2
+    lambda: 0.35
   }
   "
 
