@@ -8,8 +8,8 @@ target_sources(spatialCMC PUBLIC
 	shard.cc
 	shard_merger.h
 	shard_merger.cc
-	spatial_partition.h
-	spatial_partition.cc
+	shard_partition.h
+	shard_partition.cc
 	utils.h
 	utils.cc
 )
