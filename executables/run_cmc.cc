@@ -19,7 +19,7 @@
 #include "mixing/spp_mixing.h"
 #include "shard.h"
 #include "shard_merger.h"
-#include "spatial_partition.h"
+#include "shard_partition.h"
 #include "utils.h"
 
 // Check ArgParse input arguments
