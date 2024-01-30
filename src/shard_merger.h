@@ -12,7 +12,7 @@
 
 // spatialcmc
 #include "shard.h"
-#include "spatial_partition.h"
+#include "shard_partition.h"
 #include "utils.h"
 
 class ShardMerger {
@@ -53,9 +53,9 @@ class ShardMerger {
  private:
 
 	// Compute bayes factor for two spatial partitions merging candidates
-  double compute_bayes_factor(SpatialPartition & lhs, SpatialPartition & rhs);
+	double compute_bayes_factor(ShardPartition & lhs, ShardPartition & rhs);
 
-	bool intersects(SpatialPartition & lhs, SpatialPartition & rhs) {
+	bool intersects(ShardPartition & lhs, ShardPartition & rhs) {
 		// std::cout << "ShardMerger::intersects()" << std::endl;
 		// Concatenating vertices
 		auto idx = lhs.get_global_cluster_idx();
@@ -76,7 +76,7 @@ class ShardMerger {
 	};
 
 	// Generate spatial partitions form shards at a given iteration
-	std::deque<SpatialPartition> generate_local_clusters(const size_t & iter);
+	std::deque<ShardPartition> generate_local_clusters(const size_t & iter);
 
 };
 

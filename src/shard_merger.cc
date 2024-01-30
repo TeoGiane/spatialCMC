@@ -56,7 +56,7 @@ bayesmix::AlgorithmState ShardMerger::merge(size_t iter) {
 		auto & lhs = *it;
 
 		// Lambda function that computes the merge condition (with automatic merging)
-		auto merge_condition = [this, &lhs/*, &ctx*/] (SpatialPartition & rhs) {
+		auto merge_condition = [this, &lhs/*, &ctx*/] (ShardPartition & rhs) {
 			bool merge = (lhs.get_shard_name() != rhs.get_shard_name());
 			if(merge) { merge *= intersects(lhs, rhs); }
 			// if(merge) { merge *= GEOSIntersects_r(ctx, lhs.get_geometry(), rhs.get_geometry()); }
@@ -81,14 +81,16 @@ bayesmix::AlgorithmState ShardMerger::merge(size_t iter) {
 	merged_state.clear_cluster_states();
 	merged_state.clear_cluster_allocs();
 	Eigen::VectorXi global_cluster_allocs(global_card);
+	unsigned int k = 0;
 	for (auto && elem : local_clusters) {
 		// Set new cluster states in merged state message
-		bayesmix::AlgorithmState::ClusterState clust_state;
-		clust_state.mutable_general_state()->add_data(elem.sample(1, false)(0));
-		clust_state.set_cardinality(elem.get_card());
-		merged_state.add_cluster_states()->CopyFrom(clust_state);
+		// bayesmix::AlgorithmState::ClusterState clust_state;
+		// clust_state.mutable_general_state()->add_data(elem.sample(1, false)(0));
+		// clust_state.set_cardinality(elem.get_card());
+		merged_state.add_cluster_states()->CopyFrom(*elem.sample_full_cond());
 		// Computing global cluster allocs
-		global_cluster_allocs(elem.get_global_cluster_idx()).array() = elem.get_num_cluster();
+		global_cluster_allocs(elem.get_global_cluster_idx()).array() = k;//elem.get_num_cluster();
+		k++;
 	}
 
 	// Set new cluster allocs in merged state message
@@ -104,7 +106,7 @@ bayesmix::AlgorithmState ShardMerger::merge(size_t iter) {
 	return merged_state;
 }
 
-std::deque<SpatialPartition> ShardMerger::generate_local_clusters(const size_t & iter) {
+std::deque<ShardPartition> ShardMerger::generate_local_clusters(const size_t & iter) {
 
 	// Initialize GEOS
 	// GEOSContextHandle_t ctx = GEOS_init_r();
@@ -118,7 +120,7 @@ std::deque<SpatialPartition> ShardMerger::generate_local_clusters(const size_t &
 	// std::shuffle(parse_order.begin(), parse_order.end(), g);
 
 	// Create buffer for output
-	std::deque<SpatialPartition> local_clusters;
+	std::deque<ShardPartition> local_clusters;
 	
 	// Global cluster counter is initialized
 	size_t clust_counter = 0;
@@ -152,13 +154,13 @@ std::deque<SpatialPartition> ShardMerger::generate_local_clusters(const size_t &
 			global_clust_idx[c].push_back(data_idx_in_shard[it][j]);
 		}
 
-		// Building SpatialPartition list
+		// Building ShardPartition list
 		for (size_t k = 0; k < curr_state.cluster_states_size(); k++) {
 			// Create geometry collection from vector of geometries
 			// GEOSGeometry* geom = GEOSUnaryUnion_r(ctx, GEOSGeom_createCollection_r(ctx, GEOSGeomTypes::GEOS_GEOMETRYCOLLECTION,
 			// 																		 																	 geom_in_clust[k].data(), geom_in_clust[k].size()));
 			// Construct and fill spatial partition
-			SpatialPartition sp_to_add;
+			ShardPartition sp_to_add;
 			sp_to_add.set_shard_name(it);
 			sp_to_add.set_cluster_name(clust_counter + k);
 			sp_to_add.set_data(data_in_shard(local_clust_idx[k], 0));
@@ -187,15 +189,15 @@ std::deque<SpatialPartition> ShardMerger::generate_local_clusters(const size_t &
 	return local_clusters;
 }
 
-double ShardMerger::compute_bayes_factor(SpatialPartition & lhs, SpatialPartition & rhs) {
+double ShardMerger::compute_bayes_factor(ShardPartition & lhs, ShardPartition & rhs) {
 	// Number of simulations
 	size_t n = 100;
 	
 	// Monte Carlo samples from prior and posterior
-	auto lhs_prior = lhs.sample(n, true);
-	auto rhs_prior = rhs.sample(n, true);
-	auto lhs_post = lhs.sample(n, false);
-	auto rhs_post = rhs.sample(n, false);
+	auto lhs_prior = lhs.sample_qoi(n, true);
+	auto rhs_prior = rhs.sample_qoi(n, true);
+	auto lhs_post = lhs.sample_qoi(n, false);
+	auto rhs_post = rhs.sample_qoi(n, false);
 
 	// Compute quantity of interest
 	Eigen::VectorXd qoi_post = (lhs_post - rhs_post).array().abs(); // / (lhs_post + rhs_post).array();
