@@ -70,7 +70,7 @@ save.image(file = filename)
 hier_params =
   "
   fixed_values {
-    shape: 3.75
+    shape: 3.25
     rate: 0.25
   }
   "
@@ -98,8 +98,8 @@ algo_params =
 fit <- run_cmc(sf_mun$data, st_geometry(sf_mun), sf_mun$province_idx,
                "PoissonGamma", hier_params, mix_params, algo_params)
 
-fit_mcmc <- run_mcmc(sf_mun$data, st_geometry(sf_mun),
-                     "PoissonGamma", hier_params, mix_params, algo_params)
+# fit_mcmc <- run_mcmc(sf_mun$data, st_geometry(sf_mun),
+#                      "PoissonGamma", hier_params, mix_params, algo_params)
 
 ###########################################################################
 
@@ -117,6 +117,7 @@ unique_values <- get_unique_values(chain)
 Nclust <- apply(cluster_allocs, 1, function(x){length(unique(x))})
 psm <- salso::psm(cluster_allocs)
 sf_mun$best_clust <- as.factor(salso::salso(cluster_allocs, loss = "VI"))
+sf_mun$true_clust <- as.factor(clust_allocs)
 
 # Plot - Posterior number of clusters
 plt_nclust <- ggplot(data = data.frame(prop.table(table(Nclust))), aes(x=Nclust,y=Freq)) +
@@ -134,14 +135,24 @@ plt_psm <- ggplot(data = reshape2::melt(psm, c("x", "y"))) +
   theme_void() + theme(legend.position = "bottom") + coord_equal()
 
 # Plot - Best cluster on the geometry
-plt_best_clust <- ggplot() +
-  geom_sf(data = sf_mun, aes(fill=best_clust), color='gray25', linewidth=0.5, alpha=0.75) +
+plt_true_clust <- ggplot() +
+  geom_sf(data = sf_mun, aes(fill=true_clust), color='gray25', linewidth=0.5, alpha=0.75) +
+  geom_sf(data = geom_prov, color='darkred', fill=NA, linewidth=2) +
+  scale_fill_manual(values = c("1" = "steelblue", "2" = "darkorange")) +
   guides(fill = guide_legend(title = "Cluster", title.position = "bottom", title.hjust=0.5,
                              label.position = "bottom", keywidth = unit(1,"cm"))) +
-  theme_void() + theme(legend.position = "bottom")
+  theme_void() + theme(legend.position = "none")
+
+plt_best_clust <- ggplot() +
+  geom_sf(data = sf_mun, aes(fill=best_clust), color='gray25', linewidth=0.5, alpha=0.75) +
+  geom_sf(data = geom_prov, color='darkred', fill=NA, linewidth=2) +
+  scale_fill_manual(values = c("1" = "steelblue", "2" = "darkorange")) +
+  guides(fill = guide_legend(title = "Cluster", title.position = "bottom", title.hjust=0.5,
+                             label.position = "bottom", keywidth = unit(1,"cm"))) +
+  theme_void() + theme(legend.position = "none")
 
 # Show posterior findings
-gridExtra::grid.arrange(grobs = list(plt_nclust, plt_best_clust), ncol=2)
+gridExtra::grid.arrange(grobs = list(plt_true_clust, plt_best_clust), ncol=2)
 # plt_psm
 
 ###########################################################################
