@@ -1,8 +1,10 @@
 # Ignored files
 *.sh
 !R/*.sh
+.Rproj.user
 
 # Ignored folders
 build/
 input/
 output/
+lib/
