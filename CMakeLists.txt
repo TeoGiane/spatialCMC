@@ -1,16 +1,34 @@
-cmake_minimum_required(VERSION 3.14.0)
+cmake_minimum_required(VERSION 3.16.0)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
 message("CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}")
 
+# Check if ccache is present to speed up compilation time
 find_program(CCACHE_PROGRAM ccache)
 if (CCACHE_PROGRAM)
 	set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
 endif()
 
+# On MacOS find clang, otherwise find gcc
+if(${CMAKE_HOST_SYSTEM_NAME} MATCHES "Darwin")
+  find_program(CC_PROGRAM clang REQUIRED)
+  find_program(CXX_PROGRAM clang++ REQUIRED)
+else()
+  find_program(CC_PROGRAM gcc REQUIRED)
+  find_program(CXX_PROGRAM g++ REQUIRED)
+endif()
+
+# Set C and CXX compilers
+if(CC_PROGRAM AND CXX_PROGRAM)
+  set(CMAKE_C_COMPILER ${CC_PROGRAM})
+  set(CMAKE_CXX_COMPILER ${CXX_PROGRAM})
+endif()
+
+# Project name
 project(spatialCMC)
+
+# Set cmake variables
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_BUILD_TYPE Release)
-
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -funroll-loops -fopenmp -ftree-vectorize -Wno-deprecated")
 set(CMAKE_CXX_FLAGS_DEBUG "-Og -fopenmp -Wno-deprecated")
@@ -24,6 +42,7 @@ find_package(OpenMP REQUIRED)
 include(FetchContent)
 
 # Set up FetchContent
+set(FETCHCONTENT_BASE_DIR ${CMAKE_CURRENT_LIST_DIR}/lib)
 set(FETCHCONTENT_QUIET OFF)
 set(FETCHCONTENT_UPDATES_DISCONNECTED ON)
 
@@ -40,7 +59,6 @@ set(FETCHCONTENT_UPDATES_DISCONNECTED ON)
 
 # Fetch bayesmix library and check if it is found (SWITCH TO USUAL REPO WHEN UPDATED)
 message(CHECK_START "Fetching bayesmix")
-list(APPEND CMAKE_MESSAGE_INDENT "  ")
 set(DISABLE_TESTS ON)
 set(DISABLE_PLOTS ON)
 set(DISABLE_EXAMPLES ON)
@@ -51,7 +69,11 @@ FetchContent_Declare(
   GIT_TAG "master"
 )
 FetchContent_MakeAvailable(bayesmix)
-message("--- bayesmix found at: " ${bayesmix_SOURCE_DIR})
+message("-- bayesmix found at: " ${bayesmix_SOURCE_DIR})
+message("")
+
+# Add proper link to math/tbb library
+link_directories(${BAYESMIX_TBB_ROOT})
 
 # Compile new protos
 file(GLOB ProtoFiles "${CMAKE_CURRENT_LIST_DIR}/src/proto/*.proto")
