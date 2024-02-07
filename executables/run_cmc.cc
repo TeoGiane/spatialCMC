@@ -15,12 +15,12 @@
 #include "lib/argparse/argparse.h"
 
 // Local Inclusions
-#include "hierarchy/poisson_gamma_hierarchy.h"
+#include "hierarchies/poisson_gamma_hierarchy.h"
 #include "mixing/spp_mixing.h"
 #include "shard.h"
 #include "shard_merger.h"
 #include "shard_partition.h"
-#include "utils.h"
+#include "spatialcmc_utils.h"
 
 // Check ArgParse input arguments
 void check_args(const argparse::ArgumentParser &args) {
