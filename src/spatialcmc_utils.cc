@@ -1,4 +1,4 @@
-#include "utils.h"
+#include "spatialcmc_utils.h"
 
 namespace spatialcmc {
 

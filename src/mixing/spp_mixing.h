@@ -47,7 +47,7 @@ class sPPMixing
   std::shared_ptr<bayesmix::MixingState> get_state_proto() const override;
 
   //! Returns the Protobuf ID associated to this class
-  bayesmix::MixingId get_id() const override { return bayesmix::MixingId::UNKNOWN_MIXING; }
+  bayesmix::MixingId get_id() const override { return bayesmix::MixingId::CUSTOM_MIXING; }
 
   //! Returns whether the mixing is conditional or marginal
   bool is_conditional() const override { return false; }

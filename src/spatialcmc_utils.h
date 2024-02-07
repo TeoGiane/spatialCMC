@@ -5,10 +5,10 @@
 #include <fstream>
 #include <iostream>
 #include <stdarg.h>
-#include<vector>
+#include <vector>
 
-// GEOS C API
-#include<geos_c.h>
+// Protobuf
+#include <google/protobuf/any.pb.h>
 
 // bayesmix
 #include<src/includes.h>
@@ -23,6 +23,18 @@ namespace spatialcmc {
 
 	// Utility that parse a .csv file representing the shard allocation of each data
 	std::vector<unsigned int> read_shard_allocation_file(const std::string & filename);
+
+  // Unpack google::protobuf::Any message
+	template <typename T>
+	T unpack_protobuf_any(const google::protobuf::Any & _packed_msg) {
+		T unpacked_msg;
+		if (_packed_msg.Is<T>()) {
+			_packed_msg.UnpackTo(&unpacked_msg);
+		} else {
+			throw std::runtime_error("Unable to unpack google::protobuf::Any type.");
+		}
+		return unpacked_msg;
+	};
 
 } // namespace spatialcmc
 

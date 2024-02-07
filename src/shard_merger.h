@@ -4,8 +4,8 @@
 // STL
 #include <deque>
 
-// GEOS C API
-#include <geos_c.h>
+// // GEOS C API
+// #include <geos_c.h>
 
 // bayesmix
 #include "src/includes.h"
@@ -13,7 +13,7 @@
 // spatialcmc
 #include "shard.h"
 #include "shard_partition.h"
-#include "utils.h"
+#include "spatialcmc_utils.h"
 
 class ShardMerger {
  private:

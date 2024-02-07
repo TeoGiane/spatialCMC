@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package spatialcmc;
+
+message PoissonState {
+    double rate = 1;
+}

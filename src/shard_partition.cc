@@ -87,10 +87,12 @@ Eigen::VectorXd ShardPartition::sample_qoi(size_t n, bool prior) {
 double ShardPartition::qoi_from_state(const ClustState & state) const {
 	if(state.has_uni_ls_state()) {
 		return state.uni_ls_state().mean() / std::sqrt(state.uni_ls_state().var());
-	} else if (state.has_general_state()) {
-		return state.general_state().data(0) / std::sqrt(state.general_state().data(0));
+	} else if (state.has_custom_state()) {
+		// Unpack custom state
+    auto unp_state = spatialcmc::unpack_protobuf_any<bayesmix::GammaDistribution>(state.custom_state());
+		return unp_state.rate() / std::sqrt(unp_state.rate());
 	} else {
-		throw std::runtime_error("get_merging_parameter() not implemented for this state.");
+		throw std::runtime_error("qoi_from_state() not implemented for this state.");
 	}
 }
 

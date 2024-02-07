@@ -12,7 +12,7 @@
 #include <stan/math.hpp>
 
 // spatialcmc
-#include "utils.h"
+#include "spatialcmc_utils.h"
 
 class ShardPartition {
 

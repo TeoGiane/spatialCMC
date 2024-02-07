@@ -3,13 +3,13 @@
 
 #include <memory>
 
-#include <geos_c.h>
+// #include <geos_c.h>
 // #include <geos/geom/util/GeometryCombiner.h>
 
 #include <src/includes.h>
 #include <stan/math.hpp>
 
-#include "utils.h"
+#include "spatialcmc_utils.h"
 
 #include "mcmc_chain.pb.h"
 

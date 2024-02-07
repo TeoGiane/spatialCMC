@@ -65,8 +65,8 @@ set(DISABLE_EXAMPLES ON)
 set(BUILD_RUN OFF)
 FetchContent_Declare(
   bayesmix
-  GIT_REPOSITORY "https://github.com/bayesmix-dev/bayesmix.git"
-  GIT_TAG "master"
+  GIT_REPOSITORY "https://github.com/TeoGiane/bayesmix.git"
+  GIT_TAG "protobuf_any_extension"
 )
 FetchContent_MakeAvailable(bayesmix)
 message("-- bayesmix found at: " ${bayesmix_SOURCE_DIR})
@@ -75,29 +75,42 @@ message("")
 # Add proper link to math/tbb library
 link_directories(${BAYESMIX_TBB_ROOT})
 
-# Compile new protos
-file(GLOB ProtoFiles "${CMAKE_CURRENT_LIST_DIR}/src/proto/*.proto")
-set(PROTO_DIR proto)
-foreach(PROTO_FILE IN LISTS ProtoFiles)
-  message(STATUS "protoc proto(cc): ${PROTO_FILE}")
-  get_filename_component(PROTO_DIR ${PROTO_FILE} DIRECTORY)
-  get_filename_component(PROTO_NAME ${PROTO_FILE} NAME_WE)
-  set(PROTO_HDR ${CMAKE_CURRENT_BINARY_DIR}/${PROTO_NAME}.pb.h)
-  set(PROTO_SRC ${CMAKE_CURRENT_BINARY_DIR}/${PROTO_NAME}.pb.cc)
-  message(STATUS "protoc hdr: ${PROTO_HDR}")
-  message(STATUS "protoc src: ${PROTO_SRC}")
-  add_custom_command(
-    OUTPUT ${PROTO_SRC} ${PROTO_HDR}
-    COMMAND protobuf::protoc
-    "--proto_path=${BAYESMIX_PROTO_PATH}"
-    "--proto_path=${CMAKE_CURRENT_LIST_DIR}/src/proto"
-    ${PROTO_DIRS} "--cpp_out=${PROJECT_BINARY_DIR}" ${PROTO_FILE}
-    DEPENDS ${PROTO_FILE} protobuf::protoc
-    COMMENT "Generate C++ protocol buffer for ${PROTO_FILE}"
-    VERBATIM)
-  list(APPEND PROTO_HDRS ${PROTO_HDR})
-  list(APPEND PROTO_SRCS ${PROTO_SRC})
-endforeach()
+# list(APPEND PROTO_DIRS "--proto_path=${Protobuf_INCLUDE_DIRS}")
+# list(APPEND PROTO_DIRS "--proto_path=${BAYESMIX_PROTO_PATH}")
+# list(APPEND PROTO_DIRS "--proto_path=${CMAKE_CURRENT_LIST_DIR}/src/proto")
+# message("PROTO_DIRS: ${PROTO_DIRS}")
+
+# Compile spatialCMC protos
+include(${bayesmix_SOURCE_DIR}/cmake/ProtobufUtils.cmake)
+compile_protobuf_files(
+  FOLDER "${CMAKE_CURRENT_LIST_DIR}/src/proto"
+  INCLUDE_PROTO_PATHS "${BAYESMIX_PROTO_PATHS}"
+  HEADERS spatialcmc_PROTO_HDRS
+  SOURCES spatialcmc_PROTO_SRCS
+)
+# file(GLOB ProtoFiles "${CMAKE_CURRENT_LIST_DIR}/src/proto/*.proto")
+# set(PROTO_DIR proto)
+# foreach(PROTO_FILE IN LISTS ProtoFiles)
+#   message(STATUS "protoc proto(cc): ${PROTO_FILE}")
+#   get_filename_component(PROTO_DIR ${PROTO_FILE} DIRECTORY)
+#   get_filename_component(PROTO_NAME ${PROTO_FILE} NAME_WE)
+#   set(PROTO_HDR ${CMAKE_CURRENT_BINARY_DIR}/${PROTO_NAME}.pb.h)
+#   set(PROTO_SRC ${CMAKE_CURRENT_BINARY_DIR}/${PROTO_NAME}.pb.cc)
+#   message(STATUS "protoc hdr: ${PROTO_HDR}")
+#   message(STATUS "protoc src: ${PROTO_SRC}")
+#   add_custom_command(
+#     OUTPUT ${PROTO_SRC} ${PROTO_HDR}
+#     COMMAND protobuf::protoc
+#     # "--proto_path=${Protobuf_INCLUDE_DIRS}"
+#     # "--proto_path=${BAYESMIX_PROTO_PATH}"
+#     # "--proto_path=${CMAKE_CURRENT_LIST_DIR}/src/proto"
+#     ${PROTO_DIRS} "--cpp_out=${PROJECT_BINARY_DIR}" ${PROTO_FILE}
+#     DEPENDS ${PROTO_FILE} protobuf::protoc
+#     COMMENT "Generate C++ protocol buffer for ${PROTO_FILE}"
+#     VERBATIM)
+#   list(APPEND PROTO_HDRS ${PROTO_HDR})
+#   list(APPEND PROTO_SRCS ${PROTO_SRC})
+# endforeach()
 
 # Set include paths
 set(INCLUDE_PATHS
@@ -121,7 +134,7 @@ set(COMPILE_OPTIONS -D_REENTRANT -fPIC)
 add_library(spatialCMC OBJECT)
 
 # Add sources for spatialCMC library
-target_sources(spatialCMC PUBLIC ${PROTO_SRCS} ${PROTO_HDRS})
+target_sources(spatialCMC PUBLIC ${spatialcmc_PROTO_HDRS} ${spatialcmc_PROTO_SRCS})
 add_subdirectory(src)
 
 # Set includes, like and compile options for spatialCMC
