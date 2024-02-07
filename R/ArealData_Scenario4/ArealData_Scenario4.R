@@ -1,4 +1,4 @@
-# # ---- Third test on SBNP Clustering for Massive datasets ---- # #
+# # ---- Fourth test on SBNP Clustering for Massive datasets ---- # #
 
 # Required libraries
 library("RspatialCMC")
@@ -12,23 +12,6 @@ build_spatialCMC()
 ###########################################################################
 # Auxiliary functions -----------------------------------------------------
 
-# # Generate the true cluster
-generate_clust_allocs <- function(Nmun) {
-  clust_allocs <- matrix(1, sqrt(Nmun), sqrt(Nmun))
-  for (i in 1:((sqrt(Nmun)/2)-2)) {
-    clust_allocs[1:i,i] <- 2
-    clust_allocs[1:i,(sqrt(Nmun)-i+1)] <- 2
-    clust_allocs[rev((sqrt(Nmun)-i+1):(sqrt(Nmun))),i] <- 3
-    clust_allocs[rev((sqrt(Nmun)-i+1):(sqrt(Nmun))),(sqrt(Nmun)-i+1)] <- 3
-  }
-  clust_allocs[1:(sqrt(Nmun)/2-2),(sqrt(Nmun)/2-2):(sqrt(Nmun)/2+2)] <- 2
-  clust_allocs[1:(sqrt(Nmun)/5),(sqrt(Nmun)/2-2):(sqrt(Nmun)/2+2)] <- 3
-  clust_allocs[rev((sqrt(Nmun)/2+3):sqrt(Nmun)),(sqrt(Nmun)/2-2):(sqrt(Nmun)/2+2)] <- 3
-  clust_allocs[rev((4*sqrt(Nmun)/5+1):sqrt(Nmun)),(sqrt(Nmun)/2-2):(sqrt(Nmun)/2+2)] <- 2
-  clust_allocs <- as.numeric(clust_allocs)
-  return(clust_allocs)
-}
-
 # # Extract cluster_allocation matrix from the MCMC chain
 get_cluster_allocs <- function(chain) {
   t(sapply(chain, function(state){state$cluster_allocs}))
@@ -37,12 +20,11 @@ get_cluster_allocs <- function(chain) {
 # # Extract unique_values list from the MCMC chain
 get_unique_values <- function(chain) {
   extract_unique_values <- function(cluster_state) {
-    sapply(cluster_state, function(x){x$general_state$data})
+    sapply(cluster_state, function(x){c(x$uni_ls_state$mean, x$uni_ls_state$var)})
   }
   lapply(chain, function(state){extract_unique_values(state$cluster_states)})
 }
 
-# Predict response in each area
 compute_y_pred <- function(chain) {
   Niter <- length(chain)
   clus_allocs <- get_cluster_allocs(chain) + 1
@@ -50,7 +32,8 @@ compute_y_pred <- function(chain) {
   Ndata <- dim(clus_allocs)[2]
   out <- matrix(nrow = Niter, ncol = Ndata)
   for (i in 1:Niter) {
-    out[i,] <- rpois(Ndata, unique_values[[i]][clus_allocs[i,]])
+    out[i,] <- rnorm(Ndata, unique_values[[i]][1, clus_allocs[i,]],
+                     sqrt(unique_values[[i]][2, clus_allocs[i,]]))
   }
   return(out)
 }
@@ -67,30 +50,31 @@ square <- st_polygon(list(box))
 # Generate municipalities and province geometries
 Nprov <- 3; Nmun <- 900
 geom_mun <- st_make_grid(square, n = rep(sqrt(Nmun), 2), offset = c(0,0))
-# geom_prov <- st_make_grid(square, n = c(Nprov, 1), offset = c(0,0))
-geom_prov <- st_make_grid(square, n = c(1, Nprov), offset = c(0,0))
+geom_prov <- st_make_grid(square, n = c(Nprov, 1), offset = c(0,0))
 
 # Generate indicator for province assignment
-# prov_allocs <- rep(rep(c(0,1,2), each = sqrt(Nmun)/Nprov), 30)
-prov_allocs <- rep(c(0,1,2), each = 300)
+prov_allocs <- rep(rep(c(0,1,2), each = sqrt(Nmun)/Nprov), 30)
 province_idx <- lapply(unique(prov_allocs), function(x) which(prov_allocs == x))
 
-# Generate cluster_allocs
-Ndata <- length(geom_mun)
-gamma <- c(10,40,80)
-clust_allocs <- generate_clust_allocs(Nmun)
-
 # Generate data in municipality
+Ndata <- length(geom_mun)
+means <- c(-2,2); sds <- c(1,1)
+clust_allocs <- c(rep(c(rep(1,15),rep(2,15)),15),
+                  rep(c(rep(2,15), rep(1,15)),15))
 set.seed(1996)
-data <- rpois(Ndata, gamma[clust_allocs])
+data <- rnorm(Ndata, means[clust_allocs], sds[clust_allocs])
 
 # Generate sf object
-df_mun <- data.frame("clus_allocs" = clust_allocs,
-                     "province_idx" = prov_allocs,
+df_mun <- data.frame("province_idx" = prov_allocs,
                      "data" = data)
 sf_mun <- st_sf(df_mun, geometry = geom_mun)
 
-###########################################################################
+# Generate common timestamp (for scenario and output matching)
+# timestamp <- format(Sys.time(), "%Y%m%d-%H%M")
+
+# Save generated scenario
+# filename <- sprintf("%s/input/scenario1_%s.dat", getwd(), timestamp)
+# save.image(file = filename)
 
 ###########################################################################
 # SpatialCMC run ----------------------------------------------------------
@@ -99,8 +83,10 @@ sf_mun <- st_sf(df_mun, geometry = geom_mun)
 hier_params =
   "
   fixed_values {
-    shape: 3.25
-    rate: 0.25
+    mean: 0
+    var_scaling: 0.1
+    shape: 2
+    scale: 2
   }
   "
 
@@ -125,10 +111,10 @@ algo_params =
 
 # Run SpatialCMC sampler
 fit <- run_cmc(sf_mun$data, st_geometry(sf_mun), sf_mun$province_idx,
-               "PoissonGamma", hier_params, mix_params, algo_params)
+               "NNIG", hier_params, mix_params, algo_params)
 
-# fit_mcmc <- run_mcmc(sf_mun$data, st_geometry(sf_mun),
-#                      "PoissonGamma", hier_params, mix_params, algo_params)
+fit_mcmc <- run_mcmc(sf_mun$data, st_geometry(sf_mun),
+                     "NNIG", hier_params, mix_params, algo_params)
 
 ###########################################################################
 
@@ -136,11 +122,14 @@ fit <- run_cmc(sf_mun$data, st_geometry(sf_mun), sf_mun$province_idx,
 # Posterior inference -----------------------------------------------------
 
 # Deserialize chain
-chain <- sapply(fit, function(x){read(bayesmix.AlgorithmState,x)})
+# chain <- sapply(fit, function(x){read(bayesmix.AlgorithmState,x)})
+chain_mcmc <- sapply(fit_mcmc, function(x){read(bayesmix.AlgorithmState,x)})
 
 # Get quantity of interest
-cluster_allocs <- get_cluster_allocs(chain)
-unique_values <- get_unique_values(chain)
+# cluster_allocs <- get_cluster_allocs(chain)
+# unique_values <- get_unique_values(chain)
+cluster_allocs <- get_cluster_allocs(chain_mcmc)
+unique_values <- get_unique_values(chain_mcmc)
 
 # Compute findings from the approximated posterior distribution
 Nclust <- apply(cluster_allocs, 1, function(x){length(unique(x))})
@@ -163,7 +152,7 @@ plt_psm <- ggplot(data = reshape2::melt(psm, c("x", "y"))) +
   geom_rect(xmin=0.5, ymin=0.5, xmax=Ndata+0.5, ymax=Ndata+0.5, fill=NA, color='gray25', linewidth=0.7) +
   theme_void() + theme(legend.position = "bottom") + coord_equal()
 
-# Plot - True cluster on the geometry
+# Plot - Best cluster on the geometry
 plt_true_clust <- ggplot() +
   geom_sf(data = sf_mun, aes(fill=true_clust), color='gray25', linewidth=0.5, alpha=0.75) +
   geom_sf(data = geom_prov, color='darkred', fill=NA, linewidth=2) +
@@ -172,7 +161,6 @@ plt_true_clust <- ggplot() +
                              label.position = "bottom", keywidth = unit(1,"cm"))) +
   theme_void() + theme(legend.position = "none")
 
-# Plot - Best cluster on the geometry
 plt_best_clust <- ggplot() +
   geom_sf(data = sf_mun, aes(fill=best_clust), color='gray25', linewidth=0.5, alpha=0.75) +
   geom_sf(data = geom_prov, color='darkred', fill=NA, linewidth=2) +
@@ -183,11 +171,11 @@ plt_best_clust <- ggplot() +
 
 # Show posterior findings
 gridExtra::grid.arrange(grobs = list(plt_true_clust, plt_best_clust), ncol=2)
+# plt_psm
 
 # Plot - absolute difference between true and predictev values
 y_pred <- compute_y_pred(chain)
-# tmp <- apply(y_pred, 2, median)
-sf_mun$std_diff <- abs((colMeans(y_pred) - sf_mun$data)) / apply(y_pred, 2, sd)
+sf_mun$std_diff <- abs(colMeans(y_pred) - sf_mun$data) / apply(y_pred, 2, sd)
 plt_diff <- ggplot() +
   geom_sf(data = sf_mun, aes(fill=std_diff), color='gray25', linewidth=0.5, alpha=0.75) +
   geom_sf(data = geom_prov, color='darkred', fill=NA, linewidth=2) +

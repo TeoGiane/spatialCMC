@@ -1,43 +1,27 @@
-# # ---- Third test on SBNP Clustering for Massive datasets ---- # #
-
-# Required libraries
-library("RspatialCMC")
+# Import libraries
+library("dplyr")
 library("ggplot2")
-library("parallel")
 library("sf")
 
-# Build spatialCMC (if necessary)
-build_spatialCMC()
+# Load RspatialCMC
+library("RspatialCMC")
+
+# Set current directory
+setwd(sprintf("%s/ArealData_Scenario5",
+              dirname(Sys.getenv("RSPATIALCMC_HOME"))))
 
 ###########################################################################
 # Auxiliary functions -----------------------------------------------------
 
-# # Generate the true cluster
-generate_clust_allocs <- function(Nmun) {
-  clust_allocs <- matrix(1, sqrt(Nmun), sqrt(Nmun))
-  for (i in 1:((sqrt(Nmun)/2)-2)) {
-    clust_allocs[1:i,i] <- 2
-    clust_allocs[1:i,(sqrt(Nmun)-i+1)] <- 2
-    clust_allocs[rev((sqrt(Nmun)-i+1):(sqrt(Nmun))),i] <- 3
-    clust_allocs[rev((sqrt(Nmun)-i+1):(sqrt(Nmun))),(sqrt(Nmun)-i+1)] <- 3
-  }
-  clust_allocs[1:(sqrt(Nmun)/2-2),(sqrt(Nmun)/2-2):(sqrt(Nmun)/2+2)] <- 2
-  clust_allocs[1:(sqrt(Nmun)/5),(sqrt(Nmun)/2-2):(sqrt(Nmun)/2+2)] <- 3
-  clust_allocs[rev((sqrt(Nmun)/2+3):sqrt(Nmun)),(sqrt(Nmun)/2-2):(sqrt(Nmun)/2+2)] <- 3
-  clust_allocs[rev((4*sqrt(Nmun)/5+1):sqrt(Nmun)),(sqrt(Nmun)/2-2):(sqrt(Nmun)/2+2)] <- 2
-  clust_allocs <- as.numeric(clust_allocs)
-  return(clust_allocs)
-}
-
-# # Extract cluster_allocation matrix from the MCMC chain
+# Extract cluster_allocation matrix from the MCMC chain --> MIGLIORARE E INTEGRARE NEL PACCHETTO
 get_cluster_allocs <- function(chain) {
   t(sapply(chain, function(state){state$cluster_allocs}))
 }
 
-# # Extract unique_values list from the MCMC chain
+# Extract unique_values list from the MCMC chain --> MIGLIORARE E UNTEGRARE NEL PACCHETTO
 get_unique_values <- function(chain) {
   extract_unique_values <- function(cluster_state) {
-    sapply(cluster_state, function(x){x$general_state$data})
+    sapply(cluster_state, function(x){c(x$uni_ls_state$mean, x$uni_ls_state$var)})
   }
   lapply(chain, function(state){extract_unique_values(state$cluster_states)})
 }
@@ -60,40 +44,61 @@ compute_y_pred <- function(chain) {
 ###########################################################################
 # Generate Data and Set Parameters ----------------------------------------
 
-# Unit square polygon
-box <- rbind(c(0,0), c(0,1), c(1,1), c(1,0), c(0,0))
-square <- st_polygon(list(box))
+# Get code for Lombardia region from region shapefile
+lombardia <- read_sf("input/shp/IT-regioni_2020/IT-regioni_2020.shp") %>%
+  filter(DEN_REG == "Lombardia") %>% select(COD_REG) %>%
+  st_drop_geometry() %>% as.numeric()
 
-# Generate municipalities and province geometries
-Nprov <- 3; Nmun <- 900
-geom_mun <- st_make_grid(square, n = rep(sqrt(Nmun), 2), offset = c(0,0))
-# geom_prov <- st_make_grid(square, n = c(Nprov, 1), offset = c(0,0))
-geom_prov <- st_make_grid(square, n = c(1, Nprov), offset = c(0,0))
+# Associate code and name of provinces from province shapefile
+sf_prov <- read_sf("input/shp/IT-province_2020/IT-province_2020.shp") %>%
+  filter(COD_REG == lombardia)
 
-# Generate indicator for province assignment
-# prov_allocs <- rep(rep(c(0,1,2), each = sqrt(Nmun)/Nprov), 30)
-prov_allocs <- rep(c(0,1,2), each = 300)
-province_idx <- lapply(unique(prov_allocs), function(x) which(prov_allocs == x))
+# Map code to province names
+sigle_prov <- sf_prov %>%
+  select(COD_PROV, SIGLA) %>%
+  st_drop_geometry()
 
-# Generate cluster_allocs
-Ndata <- length(geom_mun)
-gamma <- c(10,40,80)
-clust_allocs <- generate_clust_allocs(Nmun)
+# Generate sf_mun dataset
+sf_mun <- read_sf("input/shp/IT-comuni_2020/IT-comuni_2020.shp") %>%
+  filter(COD_REG == lombardia) %>%
+  merge(sigle_prov, by = "COD_PROV") %>%
+  mutate(PROVINCIA=as.factor(SIGLA)) %>%
+  select(COMUNE, PROVINCIA)
 
-# Generate data in municipality
+# Select means and standard deviations for Gaussian kernels
+gammas <- c(1, 5, 10, 20)
+
+# Generate cluster allocs
+bergamo_coords <- sf_mun %>% filter(COMUNE == "Bergamo") %>%
+  select(geometry) %>% st_centroid() %>% st_coordinates()
+all_coords <- sf_mun %>% select(geometry) %>% st_centroid() %>% st_coordinates()
+assign2clust <- function(coord){
+  if(coord[1] >= bergamo_coords[1] & coord[2] >= bergamo_coords[2]){
+    return(1L)
+  }
+  if(coord[1] >= bergamo_coords[1] & coord[2] < bergamo_coords[2]){
+    return(2L)
+  }
+  if(coord[1] < bergamo_coords[1] & coord[2] >= bergamo_coords[2]){
+    return(3L)
+  }
+  if(coord[1] < bergamo_coords[1] & coord[2] < bergamo_coords[2]){
+    return(4L)
+  }
+}
+sf_mun$GROUP <- as.factor(apply(all_coords, 1, assign2clust))
+
+# Generate data
 set.seed(1996)
-data <- rpois(Ndata, gamma[clust_allocs])
-
-# Generate sf object
-df_mun <- data.frame("clus_allocs" = clust_allocs,
-                     "province_idx" = prov_allocs,
-                     "data" = data)
-sf_mun <- st_sf(df_mun, geometry = geom_mun)
+sample_data <- function(clust_allocs){
+  return(rpois(1, gammas[clust_allocs]))
+}
+sf_mun$DATA <- sapply(sf_mun$GROUP, sample_data)
 
 ###########################################################################
 
 ###########################################################################
-# SpatialCMC run ----------------------------------------------------------
+# spatialCMC run ----------------------------------------------------------
 
 # Set hierarchy parameters
 hier_params =
@@ -124,11 +129,11 @@ algo_params =
   "
 
 # Run SpatialCMC sampler
-fit <- run_cmc(sf_mun$data, st_geometry(sf_mun), sf_mun$province_idx,
+fit <- run_cmc(sf_mun$DATA, st_geometry(sf_mun), as.numeric(sf_mun$PROVINCIA)-1,
                "PoissonGamma", hier_params, mix_params, algo_params)
 
-# fit_mcmc <- run_mcmc(sf_mun$data, st_geometry(sf_mun),
-#                      "PoissonGamma", hier_params, mix_params, algo_params)
+fit_mcmc <- run_mcmc(sf_mun$DATA, st_geometry(sf_mun),
+                     "PoissonGamma", hier_params, mix_params, algo_params)
 
 ###########################################################################
 
@@ -136,7 +141,7 @@ fit <- run_cmc(sf_mun$data, st_geometry(sf_mun), sf_mun$province_idx,
 # Posterior inference -----------------------------------------------------
 
 # Deserialize chain
-chain <- sapply(fit, function(x){read(bayesmix.AlgorithmState,x)})
+chain <- sapply(fit_mcmc, function(x){read(bayesmix.AlgorithmState,x)})
 
 # Get quantity of interest
 cluster_allocs <- get_cluster_allocs(chain)
@@ -146,13 +151,37 @@ unique_values <- get_unique_values(chain)
 Nclust <- apply(cluster_allocs, 1, function(x){length(unique(x))})
 psm <- salso::psm(cluster_allocs)
 sf_mun$best_clust <- as.factor(salso::salso(cluster_allocs, loss = "VI"))
-sf_mun$true_clust <- as.factor(clust_allocs)
+
+###########################################################################
+
+###########################################################################
+# Visualization -----------------------------------------------------------
+
+# Plot data on the map
+plt_data <- ggplot() +
+  geom_sf(data = sf_mun, aes(fill=DATA)) +
+  scale_fill_gradient(low = "steelblue", high = "darkorange",
+                      guide = guide_colorbar(direction = "horizontal", title.hjust = 0.5,
+                                             title.position = "bottom", barwidth = unit(3,"in"))) +
+  geom_sf(data = sf_prov, col="darkred", linewidth=0.8, fill=NA) +
+  theme_void() + theme(legend.position = "bottom")
+plt_data
+
+# Plot true cluster allocation on the map
+plt_group <- ggplot() +
+  geom_sf(data = sf_mun, aes(fill=GROUP)) +
+  guides(fill=guide_legend(direction = "horizontal", title.hjust = 0.5,
+                           title.position = "bottom", label.position = "bottom")) +
+  geom_sf(data = sf_prov, col="darkred", linewidth=0.8, fill=NA) +
+  theme_void() + theme(legend.position = "bottom")
+plt_group
 
 # Plot - Posterior number of clusters
 plt_nclust <- ggplot(data = data.frame(prop.table(table(Nclust))), aes(x=Nclust,y=Freq)) +
   geom_bar(stat = "identity", color=NA, linewidth=0, fill='white') +
   geom_bar(stat = "identity", color='steelblue', alpha=0.4, linewidth=0.7, fill='steelblue') +
   xlab("N° of Clusters") + ylab("Post. Prob.")
+plt_nclust
 
 # Plot - Posterior similarity matrix
 plt_psm <- ggplot(data = reshape2::melt(psm, c("x", "y"))) +
@@ -165,32 +194,28 @@ plt_psm <- ggplot(data = reshape2::melt(psm, c("x", "y"))) +
 
 # Plot - True cluster on the geometry
 plt_true_clust <- ggplot() +
-  geom_sf(data = sf_mun, aes(fill=true_clust), color='gray25', linewidth=0.5, alpha=0.75) +
-  geom_sf(data = geom_prov, color='darkred', fill=NA, linewidth=2) +
-  scale_fill_manual(values = c("1" = "steelblue", "2" = "darkorange")) +
+  geom_sf(data = sf_mun, aes(fill=GROUP), color='gray25', linewidth=0.5, alpha=0.75) +
+  geom_sf(data = sf_prov, color='darkred', fill=NA, linewidth=1.2) +
   guides(fill = guide_legend(title = "Cluster", title.position = "bottom", title.hjust=0.5,
                              label.position = "bottom", keywidth = unit(1,"cm"))) +
   theme_void() + theme(legend.position = "none")
+plt_true_clust
 
 # Plot - Best cluster on the geometry
 plt_best_clust <- ggplot() +
   geom_sf(data = sf_mun, aes(fill=best_clust), color='gray25', linewidth=0.5, alpha=0.75) +
-  geom_sf(data = geom_prov, color='darkred', fill=NA, linewidth=2) +
-  scale_fill_manual(values = c("1" = "steelblue", "2" = "darkorange")) +
+  geom_sf(data = sf_prov, color='darkred', fill=NA, linewidth=1.2) +
   guides(fill = guide_legend(title = "Cluster", title.position = "bottom", title.hjust=0.5,
                              label.position = "bottom", keywidth = unit(1,"cm"))) +
   theme_void() + theme(legend.position = "none")
-
-# Show posterior findings
-gridExtra::grid.arrange(grobs = list(plt_true_clust, plt_best_clust), ncol=2)
+plt_best_clust
 
 # Plot - absolute difference between true and predictev values
 y_pred <- compute_y_pred(chain)
-# tmp <- apply(y_pred, 2, median)
-sf_mun$std_diff <- abs((colMeans(y_pred) - sf_mun$data)) / apply(y_pred, 2, sd)
+sf_mun$std_diff <- abs(colMeans(y_pred) - sf_mun$DATA) / apply(y_pred, 2, sd)
 plt_diff <- ggplot() +
   geom_sf(data = sf_mun, aes(fill=std_diff), color='gray25', linewidth=0.5, alpha=0.75) +
-  geom_sf(data = geom_prov, color='darkred', fill=NA, linewidth=2) +
+  geom_sf(data = sf_prov, color='darkred', fill=NA, linewidth=1.2) +
   scale_fill_gradient(low="gray80", high = "orange") +
   guides(fill = guide_colorbar(title = "Diff.", title.position = "bottom",
                                title.hjust=0.5, barwidth = unit(3,"in"))) +
