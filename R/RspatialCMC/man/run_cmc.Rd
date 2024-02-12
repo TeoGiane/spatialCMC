@@ -6,10 +6,11 @@
 \usage{
 run_cmc(
   data,
-  geometry,
+  geometry = NULL,
   shard_allocation,
   hier_type,
   hier_params,
+  mix_type,
   mix_params,
   algo_params,
   out_dir = NULL
@@ -20,7 +21,7 @@ run_cmc(
 These are the observations on which to fit the model.}
 
 \item{geometry}{A \code{sfc} object of size \code{n_samples}.
-This represents the geometry associated to each datum.}
+This represents the geometry associated to each datum. Default value is \code{NULL}}
 
 \item{shard_allocation}{A numeric vector of size \code{n_samples}.
 This represents the shard in which the corresponding datum will be assigned.}
@@ -29,6 +30,8 @@ This represents the shard in which the corresponding datum will be assigned.}
 
 \item{hier_params}{A text string containing the hyperparameters of the hierarchy or a file name where the hyperparameters are stored.
 A protobuf message of the corresponding type will be created and populated with the parameters.}
+
+\item{mix_type}{A text string containing the enum label of the hierarchy to use in the algorithm.}
 
 \item{mix_params}{A text string containing the hyperparameters of the mixing or a file name where the hyperparameters are stored.
 A protobuf message of the corresponding type will be created and populated with the parameters.}
