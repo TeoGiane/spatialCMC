@@ -16,6 +16,7 @@
 
 // Local Inclusions
 #include "hierarchies/poisson_gamma_hierarchy.h"
+#include "hierarchies/empty_hierarchy.h"
 #include "mixing/spp_mixing.h"
 #include "shard.h"
 #include "shard_merger.h"
@@ -27,12 +28,14 @@ void check_args(const argparse::ArgumentParser &args) {
   try {
     // Check if input files exist
     spatialcmc::check_file_is_readable(args.get<std::string>("--data-file"));
-    spatialcmc::check_file_is_readable(args.get<std::string>("--adj-matrix-file"));
+    if (args.get<std::string>("--adj-matrix-file") != EMPTYSTR) {
+      spatialcmc::check_file_is_readable(args.get<std::string>("--adj-matrix-file"));
+    }
     spatialcmc::check_file_is_readable(args.get<std::string>("--shard-assignment-file"));
     spatialcmc::check_file_is_readable(args.get<std::string>("--algo-params-file"));
     spatialcmc::check_file_is_readable(args.get<std::string>("--hier-prior-file"));
     spatialcmc::check_file_is_readable(args.get<std::string>("--mix-prior-file"));
-    if (args["--chain-file"] != EMPTYSTR) {
+    if (args.get<std::string>("--chain-file") != EMPTYSTR) {
       bayesmix::check_file_is_writeable(args.get<std::string>("--chain-file"));
     }
   }
@@ -67,6 +70,10 @@ int main(int argc, char const *argv[]) {
   args.add_argument("--hier-prior-file")
     .required()
     .help("Path to .asciipb file with the parameters of the hierarchy");
+  args.add_argument("--mix-type")
+    .required()
+    .default_value(std::string("sPP"))
+    .help("Enum string of the mixing");
   args.add_argument("--mix-prior-file")
     .required()
     .help("Path to .asciipb file with the parameters of the mixing");
@@ -103,20 +110,31 @@ int main(int argc, char const *argv[]) {
 
   // Read data files
   auto data = bayesmix::read_eigen_matrix(args.get<std::string>("--data-file"));
-  auto adj_matrix = bayesmix::read_eigen_matrix(args.get<std::string>("--adj-matrix-file"));
+  Eigen::MatrixXd adj_matrix;
+  if (args.get<std::string>("--adj-matrix-file") != EMPTYSTR) {
+    adj_matrix = bayesmix::read_eigen_matrix(args.get<std::string>("--adj-matrix-file"));
+  }
   auto shard_allocation = spatialcmc::read_shard_allocation_file(args.get<std::string>("--shard-assignment-file"));
 
   // Create hierarchy object
   std::shared_ptr<AbstractHierarchy> hierarchy;
   if(args.get<std::string>("--hier-type") == "PoissonGamma") {
     hierarchy = std::make_shared<PoissonGammaHierarchy>();
+  } else if (args.get<std::string>("--hier-type") == "Empty") {
+    hierarchy = std::make_shared<EmptyHierarchy>();
   } else {
     auto & factory_hier = HierarchyFactory::Instance();
     hierarchy = factory_hier.create_object(args.get<std::string>("--hier-type"));
   }
   
   // Create mixing object
-  auto mixing = std::make_shared<sPPMixing>();
+  std::shared_ptr<AbstractMixing> mixing;
+  if(args.get<std::string>("--mix-type") == "sPP") {
+    mixing = std::make_shared<sPPMixing>();
+  } else {
+    auto & factory_mixing = MixingFactory::Instance();
+    mixing = factory_mixing.create_object(args.get<std::string>("--mix-type"));
+  }
 
   // Split data in shards
   unsigned int num_shards = std::set<int>(shard_allocation.cbegin(), shard_allocation.cend()).size();
@@ -131,7 +149,9 @@ int main(int argc, char const *argv[]) {
   #pragma omp parallel for num_threads(num_threads)
 	for (size_t i = 0; i < num_shards; i++) {
     shards[i].set_data(data(global_numbering[i], 0));
-    shards[i].set_adjacency_matrix(adj_matrix(global_numbering[i], global_numbering[i]));
+    if(mixing->is_dependent()){
+      shards[i].set_adjacency_matrix(adj_matrix(global_numbering[i], global_numbering[i]));
+    }
     shards[i].set_sampler_parameters(args.get<std::string>("--algo-params-file"));
     shards[i].set_hierarchy(hierarchy->clone(), args.get<std::string>("--hier-prior-file"));
     shards[i].set_mixing(mixing->clone(), args.get<std::string>("--mix-prior-file"));

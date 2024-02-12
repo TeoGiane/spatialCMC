@@ -6,19 +6,22 @@
 #include "src/includes.h"
 
 #include "mcmc_chain.pb.h"
-#include "hierarchy/poisson_gamma_hierarchy.h"
+#include "hierarchies/poisson_gamma_hierarchy.h"
+#include "hierarchies/empty_hierarchy.h"
 #include "mixing/spp_mixing.h"
-#include "utils.h"
+#include "spatialcmc_utils.h"
 
 #define EMPTYSTR std::string("\"\"")
 
 bool check_args(const argparse::ArgumentParser &args) {
 	spatialcmc::check_file_is_readable(args.get<std::string>("--data-file"));
-	spatialcmc::check_file_is_readable(args.get<std::string>("--adj-matrix-file"));
+  if (args.get<std::string>("--adj-matrix-file") != EMPTYSTR) {
+	  spatialcmc::check_file_is_readable(args.get<std::string>("--adj-matrix-file"));
+  }
 	spatialcmc::check_file_is_readable(args.get<std::string>("--algo-params-file"));
 	spatialcmc::check_file_is_readable(args.get<std::string>("--hier-prior-file"));
 	spatialcmc::check_file_is_readable(args.get<std::string>("--mix-prior-file"));
-  if (args["--chain-file"] != EMPTYSTR) {
+  if (args.get<std::string>("--chain-file") != EMPTYSTR) {
     bayesmix::check_file_is_writeable(args.get<std::string>("--chain-file"));
   }
   return true;
@@ -44,6 +47,10 @@ int main(int argc, char *argv[]) {
   args.add_argument("--hier-prior-file")
 		.required()
 		.help("Path to .asciipb file with the parameters of the hierarchy");
+  args.add_argument("--mix-type")
+    .required()
+    .default_value(std::string("sPP"))
+    .help("Enum string of the mixing");
   args.add_argument("--mix-prior-file")
 		.required()
 		.help("Path to .asciipb file with the parameters of the mixing");
@@ -72,23 +79,31 @@ int main(int argc, char *argv[]) {
 
   // Read data files
   auto data = bayesmix::read_eigen_matrix(args.get<std::string>("--data-file"));
-  auto adj_matrix = bayesmix::read_eigen_matrix(args.get<std::string>("--adj-matrix-file"));
+  Eigen::MatrixXd adj_matrix;
+  if (args.get<std::string>("--adj-matrix-file") != EMPTYSTR){
+    adj_matrix = bayesmix::read_eigen_matrix(args.get<std::string>("--adj-matrix-file"));
+  }
 
   // Create hierarchy object
   std::shared_ptr<AbstractHierarchy> hierarchy;
   if(args.get<std::string>("--hier-type") == "PoissonGamma") {
     hierarchy = std::make_shared<PoissonGammaHierarchy>();
+  } else if (args.get<std::string>("--hier-type") == "Empty") {
+    hierarchy = std::make_shared<EmptyHierarchy>();
   } else {
     auto & factory_hier = HierarchyFactory::Instance();
     hierarchy = factory_hier.create_object(args.get<std::string>("--hier-type"));
   }
   bayesmix::read_proto_from_file(args.get<std::string>("--hier-prior-file"), hierarchy->get_mutable_prior());
 
-  // auto hier = std::make_shared<PoissonGammaHierarchy>();
-  // auto hierarchy = std::make_shared<NNIGHierarchy>();
-
-  // Create mixing object (sPPM)
-  auto mixing = std::make_shared<sPPMixing>();
+  // Create mixing object
+  std::shared_ptr<AbstractMixing> mixing;
+  if(args.get<std::string>("--mix-type") == "sPP") {
+    mixing = std::make_shared<sPPMixing>();
+  } else {
+    auto & factory_mixing = MixingFactory::Instance();
+    mixing = factory_mixing.create_object(args.get<std::string>("--mix-type"));
+  }
   bayesmix::read_proto_from_file(args.get<std::string>("--mix-prior-file"), mixing->get_mutable_prior());
 
   // Read algorithm settings proto
@@ -105,8 +120,10 @@ int main(int argc, char *argv[]) {
   algo->set_data(data);
   algo->set_hierarchy(hierarchy);
 
-  // Set covariates for mixing 
-  algo->set_mix_covariates(adj_matrix);
+  // Set covariates for mixing
+  if (mixing->is_dependent()){
+    algo->set_mix_covariates(adj_matrix);
+  }
 
   // Define proper collector
   BaseCollector *coll = new MemoryCollector();
