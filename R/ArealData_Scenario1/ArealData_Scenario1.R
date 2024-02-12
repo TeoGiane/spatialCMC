@@ -20,7 +20,10 @@ get_cluster_allocs <- function(chain) {
 # # Extract unique_values list from the MCMC chain
 get_unique_values <- function(chain) {
   extract_unique_values <- function(cluster_state) {
-    sapply(cluster_state, function(x){x$general_state$data})
+    sapply(cluster_state, function(x){
+      unp_x <- read(spatialcmc.PoissonState, x$custom_state$value)
+      return(unp_x$rate)
+    })
   }
   lapply(chain, function(state){extract_unique_values(state$cluster_states)})
 }
@@ -57,11 +60,11 @@ df_mun <- data.frame("province_idx" = prov_allocs,
 sf_mun <- st_sf(df_mun, geometry = geom_mun)
 
 # Generate common timestamp (for scenario and output matching)
-timestamp <- format(Sys.time(), "%Y%m%d-%H%M")
+# timestamp <- format(Sys.time(), "%Y%m%d-%H%M")
 
 # Save generated scenario scenario
-filename <- sprintf("%s/input/scenario1_%s.dat", getwd(), timestamp)
-save.image(file = filename)
+# filename <- sprintf("%s/input/scenario1_%s.dat", getwd(), timestamp)
+# save.image(file = filename)
 
 ###########################################################################
 # SpatialCMC run ----------------------------------------------------------
@@ -96,10 +99,10 @@ algo_params =
 
 # Run SpatialCMC sampler
 fit <- run_cmc(sf_mun$data, st_geometry(sf_mun), sf_mun$province_idx,
-               "PoissonGamma", hier_params, mix_params, algo_params)
+               "PoissonGamma", hier_params, "sPP", mix_params, algo_params)
 
-# fit_mcmc <- run_mcmc(sf_mun$data, st_geometry(sf_mun),
-#                      "PoissonGamma", hier_params, mix_params, algo_params)
+fit_mcmc <- run_mcmc(sf_mun$data, st_geometry(sf_mun),
+                     "PoissonGamma", hier_params, "sPP", mix_params, algo_params)
 
 ###########################################################################
 
