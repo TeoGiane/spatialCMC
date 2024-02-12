@@ -1,11 +1,13 @@
 #ifndef BAYESMIX_HIERARCHIES_EMPTY_HIERARCHY_H_
 #define BAYESMIX_HIERARCHIES_EMPTY_HIERARCHY_H_
 
-#include "base_hierarchy.h"
+
 #include "hierarchy_id.pb.h"
+
 #include "likelihoods/empty_likelihood.h"
 #include "priors/empty_prior_model.h"
 #include "updaters/empty_updater.h"
+#include "src/hierarchies/base_hierarchy.h"
 
 /**
  * Empty hierarchy
@@ -19,7 +21,7 @@ class EmptyHierarchy
 
   //! Returns the Protobuf ID associated to this class
   bayesmix::HierarchyId get_id() const override {
-    return bayesmix::HierarchyId::Empty;
+    return bayesmix::HierarchyId::CUSTOM_HIERARCHY;
   }
 
   //! Sets the default updater algorithm for this hierarchy
@@ -28,10 +30,10 @@ class EmptyHierarchy
   //! Initializes state parameters to appropriate values
   void initialize_state() override {
     // Get hypers
-    auto hypers = prior->get_hypers();
+    // auto hypers = prior->get_hypers();
     // Initialize likelihood state
     State::Empty state;
-    state.fake_field = hypers.fake_field;
+    // state.fake_field = hypers.fake_field;
     like->set_state(state);
   };
 

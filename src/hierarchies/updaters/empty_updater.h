@@ -1,9 +1,10 @@
 #ifndef BAYESMIX_HIERARCHIES_UPDATERS_EMPTY_UPDATER_H_
-#define BAYESMIX_HIERARCHIES_UPDATERS_EMPTY_UPDATER_H_
 
-#include "semi_conjugate_updater.h"
-#include "src/hierarchies/likelihoods/empty_likelihood.h"
-#include "src/hierarchies/priors/empty_prior_model.h"
+#include "empty_hier.pb.h"
+
+#include "hierarchies/likelihoods/empty_likelihood.h"
+#include "hierarchies/priors/empty_prior_model.h"
+#include "src/hierarchies/updaters/semi_conjugate_updater.h"
 
 /**
  * Empty Updater

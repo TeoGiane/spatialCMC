@@ -4,7 +4,8 @@ double GammaPriorModel::lpdf(const google::protobuf::Message &state_) {
   // Downcast state
   auto statecast = downcast_state(state_).custom_state();
   // Unpack custom state
-  auto unp_state = spatialcmc::unpack_protobuf_any<spatialcmc::PoissonState>(statecast);
+  spatialcmc::PoissonState unp_state; statecast.UnpackTo(&unp_state);
+  //auto unp_state = spatialcmc::unpack_protobuf_any<spatialcmc::PoissonState>(statecast);
   return stan::math::gamma_lpdf(unp_state.rate(), hypers->shape, hypers->rate);
 }
 
@@ -16,7 +17,8 @@ State::Poisson GammaPriorModel::sample(ProtoHypersPtr hier_hypers) {
   // Get proper HyerarchyHypers
   auto params = (hier_hypers) ? hier_hypers->custom_state() : get_hypers_proto()->custom_state();
   // Unpack custom state
-  auto unp_params = spatialcmc::unpack_protobuf_any<bayesmix::GammaDistribution>(params);
+  bayesmix::GammaDistribution unp_params; params.UnpackTo(&unp_params);
+  // auto unp_params = spatialcmc::unpack_protobuf_any<bayesmix::GammaDistribution>(params);
   // Sample
   out.rate = stan::math::gamma_rng(unp_params.shape(), unp_params.rate(), rng);
   return out;
@@ -27,7 +29,8 @@ void GammaPriorModel::set_hypers_from_proto(
   // Downcast hypers
   auto & hyperscast = downcast_hypers(hypers_).custom_state();
   // Unpack custom state
-  auto unp_hypers = spatialcmc::unpack_protobuf_any<bayesmix::GammaDistribution>(hyperscast);
+  bayesmix::GammaDistribution unp_hypers; hyperscast.UnpackTo(&unp_hypers);
+  // auto unp_hypers = spatialcmc::unpack_protobuf_any<bayesmix::GammaDistribution>(hyperscast);
   // Set hypers members
   hypers->shape = unp_hypers.shape();
   hypers->rate = unp_hypers.rate();

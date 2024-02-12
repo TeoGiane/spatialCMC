@@ -6,10 +6,15 @@
 #include <stan/math/rev.hpp>
 #include <vector>
 
-#include "base_prior_model.h"
-#include "hierarchy_prior.pb.h"
-#include "hyperparams.h"
+#include "empty_hier.pb.h"
+
+#include "hierarchies/likelihoods/states/empty_state.h"
+#include "src/hierarchies/priors/base_prior_model.h"
 #include "src/utils/rng.h"
+
+namespace Hyperparams {
+    struct Empty {};
+} // namespace Hyperparams
 
 /**
  * An empty prior model
@@ -17,7 +22,7 @@
 
 class EmptyPriorModel
     : public BasePriorModel<EmptyPriorModel, State::Empty, Hyperparams::Empty,
-                            bayesmix::EmptyPrior> {
+                            spatialcmc::EmptyPrior> {
  public:
   using AbstractPriorModel::ProtoHypers;
   using AbstractPriorModel::ProtoHypersPtr;

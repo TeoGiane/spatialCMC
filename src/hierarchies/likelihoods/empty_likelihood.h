@@ -1,15 +1,16 @@
 #ifndef BAYESMIX_HIERARCHIES_LIKELIHOODS_EMPTY_LIKELIHOOD_H_
 #define BAYESMIX_HIERARCHIES_LIKELIHOODS_EMPTY_LIKELIHOOD_H_
 
-#include <google/protobuf/stubs/casts.h>
+// #include <google/protobuf/stubs/casts.h>
 
 #include <memory>
 #include <stan/math/rev.hpp>
 #include <vector>
 
 #include "algorithm_state.pb.h"
-#include "base_likelihood.h"
-#include "states/includes.h"
+
+#include "hierarchies/likelihoods/states/empty_state.h"
+#include "src/hierarchies/likelihoods/base_likelihood.h"
 
 /**
  * A empty likelihood, using the `State::UniLS` state.

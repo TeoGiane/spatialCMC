@@ -30,7 +30,8 @@ namespace State {
       if (update_card) {
         card = state_.cardinality();
       }
-      auto unp_state = spatialcmc::unpack_protobuf_any<spatialcmc::PoissonState>(state_.custom_state());
+      spatialcmc::PoissonState unp_state; state_.custom_state().UnpackTo(&unp_state);
+      // auto unp_state = spatialcmc::unpack_protobuf_any<spatialcmc::PoissonState>(state_.custom_state());
       rate = unp_state.rate();
     }
   };

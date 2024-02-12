@@ -12,6 +12,7 @@
 #include <stan/math.hpp>
 
 // spatialcmc
+#include "poisson_state.pb.h"
 #include "spatialcmc_utils.h"
 
 class ShardPartition {
@@ -64,7 +65,7 @@ class ShardPartition {
 	// Print utility for debug
 	void print();
 
-	// Generate n samples of the quantity of interes either from the prior
+	// Generate n samples of the quantity of interest either from the prior
 	// or the full conditional of the hierarchy.
 	Eigen::VectorXd sample_qoi(size_t n, bool prior);
 

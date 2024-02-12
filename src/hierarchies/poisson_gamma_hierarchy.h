@@ -33,7 +33,8 @@ class PoissonGammaHierarchy : public BaseHierarchy<PoissonGammaHierarchy, Poisso
   
   double marg_lpdf(ProtoHypersPtr hier_params, const Eigen::RowVectorXd &datum) const override {
     // Unpack custom state
-    auto unp_hier_params = spatialcmc::unpack_protobuf_any<bayesmix::GammaDistribution>(hier_params->custom_state());
+    bayesmix::GammaDistribution unp_hier_params; hier_params->custom_state().UnpackTo(&unp_hier_params);
+    // auto unp_hier_params = spatialcmc::unpack_protobuf_any<bayesmix::GammaDistribution>(hier_params->custom_state());
     return stan::math::neg_binomial_lpmf(datum(0), unp_hier_params.shape(), unp_hier_params.rate());
   };
 };

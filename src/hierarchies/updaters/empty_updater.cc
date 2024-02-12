@@ -1,11 +1,12 @@
 #include "empty_updater.h"
 
-#include "src/hierarchies/likelihoods/states/includes.h"
-#include "src/hierarchies/priors/hyperparams.h"
+// #include "src/hierarchies/likelihoods/states/includes.h"
+// #include "src/hierarchies/priors/hyperparams.h"
 
 AbstractUpdater::ProtoHypersPtr EmptyUpdater::compute_posterior_hypers(AbstractLikelihood& like, AbstractPriorModel& prior) {
   // Proto conversion
   ProtoHypers out;
-  out.mutable_empty_state()->set_fake_field(0);
+  spatialcmc::EmptyDistribution unp_hypers;
+  out.mutable_custom_state()->PackFrom(unp_hypers);
   return std::make_shared<ProtoHypers>(out);
 }

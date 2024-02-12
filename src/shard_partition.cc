@@ -89,7 +89,9 @@ double ShardPartition::qoi_from_state(const ClustState & state) const {
 		return state.uni_ls_state().mean() / std::sqrt(state.uni_ls_state().var());
 	} else if (state.has_custom_state()) {
 		// Unpack custom state
-    auto unp_state = spatialcmc::unpack_protobuf_any<bayesmix::GammaDistribution>(state.custom_state());
+		// std::cout << "Here!!" << std::endl;
+		spatialcmc::PoissonState unp_state; state.custom_state().UnpackTo(&unp_state);
+    	// auto unp_state = spatialcmc::unpack_protobuf_any<spatialcmc::PoissonState>(state.custom_state());
 		return unp_state.rate() / std::sqrt(unp_state.rate());
 	} else {
 		throw std::runtime_error("qoi_from_state() not implemented for this state.");

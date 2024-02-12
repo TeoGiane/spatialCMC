@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package spatialcmc;
+
+message EmptyState {}
+
+message EmptyDistribution {}
+
+message EmptyPrior {
+    EmptyDistribution prior = 1;
+}
