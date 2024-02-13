@@ -48,7 +48,8 @@ run_mcmc <- function(data, geometry = NULL, hier_type, hier_params,
 
   # Use temporary directory if out_dir is not set
   if(is.null(out_dir)) {
-    out_dir = sprintf("%s/temp", dirname(MCMC_EXE)); dir.create(out_dir, showWarnings = F)
+    out_dir = sprintf("%s/tmp-%s", dirname(MCMC_EXE),
+                      stringi::stri_rand_strings(1, 7)); dir.create(out_dir, showWarnings = F)
     remove_out_dir = TRUE
   } else {
     remove_out_dir = FALSE
