@@ -36,7 +36,7 @@ cat(sprintf("Geometry file: %s\n", geometry_file)) # Log
 load(geometry_file)
 
 # Deduce number of data
-n <- length(grid_geometry)
+n <- length(geometry)
 cat(sprintf("N° of data: %g\n", n)) # Log
 
 # Define mixing parameters template
@@ -61,8 +61,8 @@ algo_params =
 "
 algo_id: 'Neal2'
 rng_seed: 10092022
-iterations: 4000
-burnin: 1000
+iterations: 4
+burnin: 1
 init_num_clusters: 5
 "
 
@@ -74,7 +74,7 @@ if(!dir.exists(dirname(out_file))) {
 cat(sprintf("Output directory: %s\n", normalizePath(dirname(out_file)))) # Log
 
 # Run Sampler
-fit <- sample_eppf(n, geometry = grid_geometry,
+fit <- sample_eppf(n, geometry = geometry,
                    mix_type = "sPP", mix_params = mix_params,
                    algo_params = algo_params)
 
