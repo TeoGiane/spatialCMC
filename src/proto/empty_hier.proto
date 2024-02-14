@@ -7,5 +7,7 @@ message EmptyState {}
 message EmptyDistribution {}
 
 message EmptyPrior {
-    EmptyDistribution prior = 1;
+  oneof prior {
+    EmptyDistribution empty = 1;
+  }
 }
