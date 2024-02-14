@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
   }	
 
 	// Final message
-  std::cout << "End of run_cmc.cc" << std::endl;
+  std::cout << "End of run_mcmc.cc" << std::endl;
   std::cout << std::endl;
 
 	// Memory management
