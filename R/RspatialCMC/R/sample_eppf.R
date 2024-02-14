@@ -21,7 +21,7 @@ sample_eppf <- function(n, geometry = NULL, mix_type,
   # Define fictional dataset, Empty hierarchy with no prior
   data <- numeric(n)
   hier_type <- "Empty"
-  hier_params <- ""
+  hier_params <- "empty{}"
 
   # Call run_mcmc function
   return(run_mcmc(data, geometry, hier_type, hier_params,
