@@ -1,6 +1,6 @@
 # Ignored files
 *.sh
-!R/*.sh
+!R/*/*.sh
 .Rproj.user
 
 # Ignored folders
