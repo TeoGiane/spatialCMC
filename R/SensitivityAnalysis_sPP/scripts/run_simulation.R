@@ -61,8 +61,8 @@ algo_params =
 "
 algo_id: 'Neal2'
 rng_seed: 10092022
-iterations: 4
-burnin: 1
+iterations: 5000
+burnin: 1000
 init_num_clusters: 5
 "
 
