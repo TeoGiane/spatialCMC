@@ -101,8 +101,8 @@ algo_params =
 fit <- run_cmc(sf_mun$data, st_geometry(sf_mun), sf_mun$province_idx,
                "PoissonGamma", hier_params, "sPP", mix_params, algo_params)
 
-fit_mcmc <- run_mcmc(sf_mun$data, st_geometry(sf_mun),
-                     "PoissonGamma", hier_params, "sPP", mix_params, algo_params)
+# fit_mcmc <- run_mcmc(sf_mun$data, st_geometry(sf_mun),
+#                      "PoissonGamma", hier_params, "sPP", mix_params, algo_params)
 
 ###########################################################################
 
@@ -118,7 +118,7 @@ unique_values <- get_unique_values(chain)
 
 # Compute findings from the approximated posterior distribution
 Nclust <- apply(cluster_allocs, 1, function(x){length(unique(x))})
-psm <- salso::psm(cluster_allocs)
+# psm <- salso::psm(cluster_allocs)
 sf_mun$best_clust <- as.factor(salso::salso(cluster_allocs, loss = "VI"))
 sf_mun$true_clust <- as.factor(clust_allocs)
 
@@ -155,7 +155,9 @@ plt_best_clust <- ggplot() +
   theme_void() + theme(legend.position = "none")
 
 # Show posterior findings
-gridExtra::grid.arrange(grobs = list(plt_true_clust, plt_best_clust), ncol=2)
+titletext <- grid::textGrob(bquote(alpha~"="~.(alpha)~","~lambda~"="~.(lambda)),
+                            gp=grid::gpar(fontsize=16))
+gridExtra::grid.arrange(plt_nclust, plt_best_clust, ncol=2, top = titletext)
 # plt_psm
 
 ###########################################################################
