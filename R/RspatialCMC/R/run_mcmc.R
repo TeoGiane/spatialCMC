@@ -57,7 +57,7 @@ run_mcmc <- function(data, geometry = NULL, hier_type, hier_params,
 
   # Compute adjacency matrix from geometry
   if (!is.null(geometry)) {
-    adj_matrix <- spdep::nb2mat(spdep::poly2nb(geometry), style = "B", zero.policy = T)
+    adj_matrix <- spdep::nb2mat(spdep::poly2nb(geometry, queen = F), style = "B", zero.policy = T)
   }
 
   # Prepare files for data and outcomes
