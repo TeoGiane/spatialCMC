@@ -129,13 +129,13 @@ plt_nclust <- ggplot(data = data.frame(prop.table(table(Nclust))), aes(x=Nclust,
   xlab("N° of Clusters") + ylab("Post. Prob.")
 
 # Plot - Posterior similarity matrix
-plt_psm <- ggplot(data = reshape2::melt(psm, c("x", "y"))) +
-  geom_tile(aes(x=x, y=y, fill=value)) +
-  scale_fill_gradient("Post. Prob. of Co-Clustering", low='steelblue', high='darkorange',
-                      guide = guide_colorbar(title.position = "bottom", title.hjust = 0.5,
-                                             direction = "horizontal", barwidth = unit(3,"in"))) +
-  geom_rect(xmin=0.5, ymin=0.5, xmax=Ndata+0.5, ymax=Ndata+0.5, fill=NA, color='gray25', linewidth=0.7) +
-  theme_void() + theme(legend.position = "bottom") + coord_equal()
+# plt_psm <- ggplot(data = reshape2::melt(psm, c("x", "y"))) +
+#   geom_tile(aes(x=x, y=y, fill=value)) +
+#   scale_fill_gradient("Post. Prob. of Co-Clustering", low='steelblue', high='darkorange',
+#                       guide = guide_colorbar(title.position = "bottom", title.hjust = 0.5,
+#                                              direction = "horizontal", barwidth = unit(3,"in"))) +
+#   geom_rect(xmin=0.5, ymin=0.5, xmax=Ndata+0.5, ymax=Ndata+0.5, fill=NA, color='gray25', linewidth=0.7) +
+#   theme_void() + theme(legend.position = "bottom") + coord_equal()
 
 # Plot - Best cluster on the geometry
 plt_true_clust <- ggplot() +
@@ -157,7 +157,7 @@ plt_best_clust <- ggplot() +
 # Show posterior findings
 titletext <- grid::textGrob(bquote(alpha~"="~.(alpha)~","~lambda~"="~.(lambda)),
                             gp=grid::gpar(fontsize=16))
-gridExtra::grid.arrange(plt_nclust, plt_best_clust, ncol=2, top = titletext)
+gridExtra::grid.arrange(plt_nclust, plt_best_clust, ncol=2) #, top = titletext)
 # plt_psm
 
 ###########################################################################
