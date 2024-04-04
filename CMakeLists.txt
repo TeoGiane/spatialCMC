@@ -44,7 +44,7 @@ include(FetchContent)
 # Set up FetchContent
 set(FETCHCONTENT_BASE_DIR ${CMAKE_CURRENT_LIST_DIR}/lib)
 set(FETCHCONTENT_QUIET OFF)
-set(FETCHCONTENT_UPDATES_DISCONNECTED ON)
+# set(FETCHCONTENT_UPDATES_DISCONNECTED ON)
 
 # Fetch bayesmix library and check if it is found (SWITCH TO USUAL REPO WHEN UPDATED)
 message(CHECK_START "Fetching bayesmix")
