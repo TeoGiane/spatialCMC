@@ -56,6 +56,12 @@ class ShardPartition {
 	// Merge current spatial partition with the input spatial partition
 	void merge(const ShardPartition & rhs);
 
+	// Returns a sample from the prior distribution of the hierarchy
+	std::shared_ptr<ClustState> sample_prior() {
+		hierarchy->sample_prior();
+		return hierarchy->get_state_proto();
+	}
+
 	// Returns a sample from the full conditional distribution of the hierarchy
 	std::shared_ptr<ClustState> sample_full_cond() {
 		hierarchy->sample_full_cond();
@@ -67,12 +73,12 @@ class ShardPartition {
 
 	// Generate n samples of the quantity of interest either from the prior
 	// or the full conditional of the hierarchy.
-	Eigen::VectorXd sample_qoi(size_t n, bool prior);
+	// Eigen::VectorXd sample_qoi(size_t n, bool prior);
 
 	private:
 
 	// Compute quantity of interest from sampled state of the hierarchy
-	double qoi_from_state(const ClustState & state) const ;
+	// double qoi_from_state(const ClustState & state) const ;
 
 };
 

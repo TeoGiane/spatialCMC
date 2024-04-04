@@ -55,6 +55,48 @@ class ShardMerger {
 	// Compute bayes factor for two spatial partitions merging candidates
 	double compute_bayes_factor(ShardPartition & lhs, ShardPartition & rhs);
 
+	// Generate a Mone Carlo sample for the L^2 distance between density functions
+	double sample_l2_distance(ShardPartition & lhs, ShardPartition & rhs, bool prior) {
+		bayesmix::AlgorithmState::ClusterState state_lhs, state_rhs;
+		state_lhs = prior ? *(lhs.sample_prior()) : *(lhs.sample_full_cond());
+		state_rhs = prior ? *(rhs.sample_prior()) : *(rhs.sample_full_cond());
+		return compute_l2_distance(state_lhs, state_rhs);
+	}
+
+	// Compute L^2 distance between two densities in closed form, using the associated parameters
+	double compute_l2_distance(bayesmix::AlgorithmState::ClusterState & lhs, bayesmix::AlgorithmState::ClusterState & rhs) {
+		// std::cout << "ShardMerger::compute_l2_distance()" << std::endl;
+		double out = 0;
+		if (lhs.has_uni_ls_state() && rhs.has_uni_ls_state()) {
+			double lvar = lhs.uni_ls_state().var(), rvar = rhs.uni_ls_state().var();
+			double lmean = lhs.uni_ls_state().mean(), rmean = rhs.uni_ls_state().mean();
+			// #pragma omp critical
+			// std::cout << "Thread " << omp_get_thread_num() << ": lmean: " << lmean << ", lvar: " << lvar << ", rmean: " << rmean << ", lrvar: " << rvar << std::endl;
+
+			// std::cout << "out: " << out << std::endl;
+			out = std::exp(-(stan::math::LOG_TWO + stan::math::LOG_SQRT_PI + 0.5*std::log(lvar)));
+			// std::cout << "out: " << out << std::endl;
+			out += std::exp(-(stan::math::LOG_TWO + stan::math::LOG_SQRT_PI + 0.5*std::log(rvar)));
+			// std::cout << "out: " << out << std::endl;
+			out -= 2 * std::exp(stan::math::normal_lpdf(lmean, rmean, std::sqrt(lvar + rvar)));
+			// std::cout << "out: " << out << std::endl;
+			// std::cout << "end" << std::endl << std::endl;
+			// #pragma omp critical
+			// std::cout << "ShardMerger::compute_l2_distance(), result: " << out << std::endl;
+			
+			// Avoid negative zeros (apparently)
+			// if (out < 0) {
+			// 	out = std::abs(out);
+			// 	// #pragma omp critical
+			// 	// std::cout << "A NEGATIVE VALUE HAS BEEN PRODUCED!" << std::endl;
+			// }
+			return out;
+			// return std::sqrt(out);
+		} else {
+			throw std::runtime_error("compute_l2_distance() not implemented for this cluster state.");
+		}
+	}
+
 	bool intersects(ShardPartition & lhs, ShardPartition & rhs) {
 		// std::cout << "ShardMerger::intersects()" << std::endl;
 		// Concatenating vertices

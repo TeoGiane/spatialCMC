@@ -60,7 +60,7 @@ bayesmix::AlgorithmState ShardMerger::merge(size_t iter) {
 			bool merge = (lhs.get_shard_name() != rhs.get_shard_name());
 			if(merge) { merge *= intersects(lhs, rhs); }
 			// if(merge) { merge *= GEOSIntersects_r(ctx, lhs.get_geometry(), rhs.get_geometry()); }
-			if(merge) { merge *= (compute_bayes_factor(lhs, rhs) > 0.0); }
+			if(merge) { merge *= (compute_bayes_factor(lhs, rhs) > 10.0); }
 			if(merge) { lhs.merge(rhs); }
 			return merge;
 		};
@@ -190,26 +190,48 @@ std::deque<ShardPartition> ShardMerger::generate_local_clusters(const size_t & i
 }
 
 double ShardMerger::compute_bayes_factor(ShardPartition & lhs, ShardPartition & rhs) {
-	// Number of simulations
-	size_t n = 100;
-	
 	// Monte Carlo samples from prior and posterior
-	auto lhs_prior = lhs.sample_qoi(n, true);
-	auto rhs_prior = rhs.sample_qoi(n, true);
-	auto lhs_post = lhs.sample_qoi(n, false);
-	auto rhs_post = rhs.sample_qoi(n, false);
+	size_t n_sim = 40;
+	Eigen::VectorXd l2_prior(n_sim), l2_post(n_sim); bool prior = true;
+	// #pragma omp single
+	// {
+	for (size_t k = 0; k < n_sim; k++) {
+		// #pragma omp critical
+		//std::cout << "k: " << k << std::endl;
+		l2_prior(k) = sample_l2_distance(lhs, rhs, prior);
+		// #pragma omp critical
+		//std::cout << "l2_prior: " << l2_prior(k) << std::endl;
+		l2_post(k) = sample_l2_distance(lhs, rhs, !prior);
+		// #pragma omp critical
+		//std::cout << "l2_post: " << l2_post(k) << std::endl;
+	}
+	// }
+	
+	// auto lhs_prior = lhs.sample_qoi(n, true);
+	// auto rhs_prior = rhs.sample_qoi(n, true);
+	// auto lhs_post = lhs.sample_qoi(n, false);
+	// auto rhs_post = rhs.sample_qoi(n, false);
 
 	// Compute quantity of interest
-	Eigen::VectorXd qoi_post = (lhs_post - rhs_post).array().abs(); // / (lhs_post + rhs_post).array();
-	Eigen::VectorXd qoi_prior = (lhs_prior - rhs_prior).array().abs(); // / (lhs_prior + rhs_prior).array();
+	// Eigen::VectorXd qoi_post = (lhs_post - rhs_post).array().abs(); // / (lhs_post + rhs_post).array().abs();
+	// Eigen::VectorXd qoi_prior = (lhs_prior - rhs_prior).array().abs(); // / (lhs_prior + rhs_prior).array().abs();
 
 	// Compute epsilon dynamically
-	double epsilon = stan::math::quantile(qoi_prior, 0.5);
+	// double epsilon = stan::math::quantile(qoi_prior, 0.5);
+	// #pragma omp critical
+	// std::cout << "l2_prior on thread " << omp_get_thread_num() << ": " << l2_prior.transpose() << std::endl;	
+	double epsilon = stan::math::quantile(l2_prior, 0.5);
 
 	// Compute logBF
-	double post_odd = (qoi_post.array() < epsilon).count() / static_cast<double>(n);
-	double prior_odd = (qoi_prior.array() < epsilon).count() / static_cast<double>(n);
-	double logBF = (prior_odd == 0) ?  stan::math::NEGATIVE_INFTY : std::log(post_odd / prior_odd);
+	double l_post_odd = std::log((l2_post.array() < epsilon).count()) - std::log((l2_post.array() >= epsilon).count());
+	// double l_prior_odd = std::log((l2_prior.array() < epsilon).count()) - std::log((l2_prior.array() >= epsilon).count()); // == 0 by def of epsilon
+	double logBF = l_post_odd; // - l_prior_odd;
+
+	// #pragma omp critical
+	// std::cout << "ShardMerger::compute_bayes_factor() in thread" << omp_get_thread_num() << ": epsilon = " << epsilon << ", l_post_odd = " << l_post_odd << ", l_prior_odd = " << l_prior_odd << ", logBF = " << logBF << std::endl;
+	// double post_odd = (qoi_post.array() < epsilon).count() / static_cast<double>(n);
+	// double prior_odd = (qoi_prior.array() < epsilon).count() / static_cast<double>(n);
+	// double logBF = (prior_odd == 0) ?  stan::math::NEGATIVE_INFTY : (std::log(post_odd) - std::log(prior_odd));
 
 	// return logBF
 	return logBF;

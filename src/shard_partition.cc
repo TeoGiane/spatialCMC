@@ -67,36 +67,36 @@ void ShardPartition::merge(const ShardPartition & rhs) {
 	global_clust_idx.insert(global_clust_idx.end(), rhs.global_clust_idx.begin(), rhs.global_clust_idx.end());
 }
 
-Eigen::VectorXd ShardPartition::sample_qoi(size_t n, bool prior) {
-	// Generate buffer
-	Eigen::VectorXd out(n);
-	// Sample
-	for (size_t i = 0; i < n; i++) {
-		if(prior) {
-			hierarchy->sample_prior();
-		} else {
-			hierarchy->sample_full_cond();
-		}
-		// Compute quantity of interest from the current sampled value
-		out(i) = qoi_from_state(*(hierarchy->get_state_proto()));
-	}
-	// Return
-	return out;
-}
+// Eigen::VectorXd ShardPartition::sample_qoi(size_t n, bool prior) {
+// 	// Generate buffer
+// 	Eigen::VectorXd out(n);
+// 	// Sample
+// 	for (size_t i = 0; i < n; i++) {
+// 		if(prior) {
+// 			hierarchy->sample_prior();
+// 		} else {
+// 			hierarchy->sample_full_cond();
+// 		}
+// 		// Compute quantity of interest from the current sampled value
+// 		out(i) = qoi_from_state(*(hierarchy->get_state_proto()));
+// 	}
+// 	// Return
+// 	return out;
+// }
 
-double ShardPartition::qoi_from_state(const ClustState & state) const {
-	if(state.has_uni_ls_state()) {
-		return state.uni_ls_state().mean() / std::sqrt(state.uni_ls_state().var());
-	} else if (state.has_custom_state()) {
-		// Unpack custom state
-		// std::cout << "Here!!" << std::endl;
-		spatialcmc::PoissonState unp_state; state.custom_state().UnpackTo(&unp_state);
-    	// auto unp_state = spatialcmc::unpack_protobuf_any<spatialcmc::PoissonState>(state.custom_state());
-		return unp_state.rate() / std::sqrt(unp_state.rate());
-	} else {
-		throw std::runtime_error("qoi_from_state() not implemented for this state.");
-	}
-}
+// double ShardPartition::qoi_from_state(const ClustState & state) const {
+// 	if(state.has_uni_ls_state()) {
+// 		return state.uni_ls_state().mean() / std::sqrt(state.uni_ls_state().var());
+// 	} else if (state.has_custom_state()) {
+// 		// Unpack custom state
+// 		// std::cout << "Here!!" << std::endl;
+// 		spatialcmc::PoissonState unp_state; state.custom_state().UnpackTo(&unp_state);
+//     	// auto unp_state = spatialcmc::unpack_protobuf_any<spatialcmc::PoissonState>(state.custom_state());
+// 		return unp_state.rate() / std::sqrt(unp_state.rate());
+// 	} else {
+// 		throw std::runtime_error("qoi_from_state() not implemented for this state.");
+// 	}
+// }
 
 void ShardPartition::print() {
 	std::cout << "Partition: " << num_cluster << " coming from shard " << num_shard << std::endl;
@@ -104,7 +104,7 @@ void ShardPartition::print() {
 	std::cout << "Data size: " << data.size() << std::endl;
 	std::cout << "Global data indexes: "; for (auto && elem : global_clust_idx) { std::cout << elem << " "; }; std::cout << std::endl;
 	std::cout << "Global data index size: " << global_clust_idx.size() << std::endl;
-	std::cout << "Unique Value: " << sample_qoi(1, false).row(0) << std::endl;
-	std::cout << "HyperParams: " << prior_params.DebugString() << std::endl;
+	std::cout << "Unique Value:\n " << sample_full_cond()->DebugString() << std::endl;
+	std::cout << "HyperParams:\n " << prior_params.DebugString() << std::endl;
 	std::cout << std::endl;
 }
