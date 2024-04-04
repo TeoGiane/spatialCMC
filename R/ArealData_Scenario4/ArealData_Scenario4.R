@@ -111,10 +111,10 @@ algo_params =
 
 # Run SpatialCMC sampler
 fit <- run_cmc(sf_mun$data, st_geometry(sf_mun), sf_mun$province_idx,
-               "NNIG", hier_params, mix_params, algo_params)
+               "NNIG", hier_params, "sPP", mix_params, algo_params)
 
-fit_mcmc <- run_mcmc(sf_mun$data, st_geometry(sf_mun),
-                     "NNIG", hier_params, mix_params, algo_params)
+# fit_mcmc <- run_mcmc(sf_mun$data, st_geometry(sf_mun),
+#                      "NNIG", hier_params, mix_params, algo_params)
 
 ###########################################################################
 
@@ -122,14 +122,14 @@ fit_mcmc <- run_mcmc(sf_mun$data, st_geometry(sf_mun),
 # Posterior inference -----------------------------------------------------
 
 # Deserialize chain
-# chain <- sapply(fit, function(x){read(bayesmix.AlgorithmState,x)})
-chain_mcmc <- sapply(fit_mcmc, function(x){read(bayesmix.AlgorithmState,x)})
+chain <- sapply(fit, function(x){read(bayesmix.AlgorithmState,x)})
+# chain_mcmc <- sapply(fit_mcmc, function(x){read(bayesmix.AlgorithmState,x)})
 
 # Get quantity of interest
-# cluster_allocs <- get_cluster_allocs(chain)
-# unique_values <- get_unique_values(chain)
-cluster_allocs <- get_cluster_allocs(chain_mcmc)
-unique_values <- get_unique_values(chain_mcmc)
+cluster_allocs <- get_cluster_allocs(chain)
+unique_values <- get_unique_values(chain)
+# cluster_allocs <- get_cluster_allocs(chain_mcmc)
+# unique_values <- get_unique_values(chain_mcmc)
 
 # Compute findings from the approximated posterior distribution
 Nclust <- apply(cluster_allocs, 1, function(x){length(unique(x))})
