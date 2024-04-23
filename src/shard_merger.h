@@ -68,8 +68,10 @@ class ShardMerger {
 		// std::cout << "ShardMerger::compute_l2_distance()" << std::endl;
 		double out = 0;
 		if (lhs.has_uni_ls_state() && rhs.has_uni_ls_state()) {
-			double lvar = lhs.uni_ls_state().var(), rvar = rhs.uni_ls_state().var();
-			double lmean = lhs.uni_ls_state().mean(), rmean = rhs.uni_ls_state().mean();
+			double lmean = lhs.uni_ls_state().mean(), lvar = lhs.uni_ls_state().var();
+			// std::cout << "lmean: " << lmean << ", lvar: " << lvar << std::endl;
+			double rmean = rhs.uni_ls_state().mean(), rvar = rhs.uni_ls_state().var();
+			// std::cout << "rmean: " << rmean << ", rvar: " << rvar << std::endl;
 			// #pragma omp critical
 			// std::cout << "Thread " << omp_get_thread_num() << ": lmean: " << lmean << ", lvar: " << lvar << ", rmean: " << rmean << ", lrvar: " << rvar << std::endl;
 
@@ -78,7 +80,7 @@ class ShardMerger {
 			// std::cout << "out: " << out << std::endl;
 			out += std::exp(-(stan::math::LOG_TWO + stan::math::LOG_SQRT_PI + 0.5*std::log(rvar)));
 			// std::cout << "out: " << out << std::endl;
-			out -= 2 * std::exp(stan::math::normal_lpdf(lmean, rmean, std::sqrt(lvar + rvar)));
+			out -= 2 * std::exp(stan::math::normal_lpdf(0, lmean - rmean, std::sqrt(lvar + rvar)));
 			// std::cout << "out: " << out << std::endl;
 			// std::cout << "end" << std::endl << std::endl;
 			// #pragma omp critical
@@ -92,6 +94,23 @@ class ShardMerger {
 			// }
 			return out;
 			// return std::sqrt(out);
+		} else if (lhs.has_custom_state() && rhs.has_custom_state()) {
+			// std::cout << "ShardMerger::compute_l2distance()" << std::endl;
+			spatialcmc::PoissonState unp_state; 
+			lhs.custom_state().UnpackTo(&unp_state); double lrate = unp_state.rate();
+			// std::cout << "lrate: " << lrate << std::endl;
+			rhs.custom_state().UnpackTo(&unp_state); double rrate = unp_state.rate();
+			// std::cout << "rrate: " << rrate << std::endl;
+
+			out = std::exp(-2*lrate + stan::math::log_modified_bessel_first_kind(0, 2*lrate));
+			// std::cout << "out[1]: " << out << std::endl;
+			out += std::exp(-2*rrate + stan::math::log_modified_bessel_first_kind(0, 2*rrate));
+			// std::cout << "out[2]: " << out << std::endl;
+			out -= 2*std::exp(-lrate -rrate + stan::math::log_modified_bessel_first_kind(0, 2*std::sqrt(lrate*rrate)));
+			// std::cout << "out[3]: " << out << std::endl;
+
+			return out;
+
 		} else {
 			throw std::runtime_error("compute_l2_distance() not implemented for this cluster state.");
 		}

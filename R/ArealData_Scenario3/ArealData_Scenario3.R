@@ -37,7 +37,10 @@ get_cluster_allocs <- function(chain) {
 # # Extract unique_values list from the MCMC chain
 get_unique_values <- function(chain) {
   extract_unique_values <- function(cluster_state) {
-    sapply(cluster_state, function(x){x$general_state$data})
+    sapply(cluster_state, function(x){
+      unp_x <- read(spatialcmc.PoissonState, x$custom_state$value)
+      return(unp_x$rate)
+    })
   }
   lapply(chain, function(state){extract_unique_values(state$cluster_states)})
 }
@@ -67,12 +70,12 @@ square <- st_polygon(list(box))
 # Generate municipalities and province geometries
 Nprov <- 3; Nmun <- 900
 geom_mun <- st_make_grid(square, n = rep(sqrt(Nmun), 2), offset = c(0,0))
-# geom_prov <- st_make_grid(square, n = c(Nprov, 1), offset = c(0,0))
-geom_prov <- st_make_grid(square, n = c(1, Nprov), offset = c(0,0))
+geom_prov <- st_make_grid(square, n = c(Nprov, 1), offset = c(0,0))
+# geom_prov <- st_make_grid(square, n = c(1, Nprov), offset = c(0,0))
 
 # Generate indicator for province assignment
-# prov_allocs <- rep(rep(c(0,1,2), each = sqrt(Nmun)/Nprov), 30)
-prov_allocs <- rep(c(0,1,2), each = 300)
+prov_allocs <- rep(rep(c(0,1,2), each = sqrt(Nmun)/Nprov), 30)
+# prov_allocs <- rep(c(0,1,2), each = 300)
 province_idx <- lapply(unique(prov_allocs), function(x) which(prov_allocs == x))
 
 # Generate cluster_allocs
@@ -125,7 +128,7 @@ algo_params =
 
 # Run SpatialCMC sampler
 fit <- run_cmc(sf_mun$data, st_geometry(sf_mun), sf_mun$province_idx,
-               "PoissonGamma", hier_params, mix_params, algo_params)
+               "PoissonGamma", hier_params, "sPP", mix_params, algo_params)
 
 # fit_mcmc <- run_mcmc(sf_mun$data, st_geometry(sf_mun),
 #                      "PoissonGamma", hier_params, mix_params, algo_params)
@@ -166,7 +169,7 @@ plt_psm <- ggplot(data = reshape2::melt(psm, c("x", "y"))) +
 # Plot - True cluster on the geometry
 plt_true_clust <- ggplot() +
   geom_sf(data = sf_mun, aes(fill=true_clust), color='gray25', linewidth=0.5, alpha=0.75) +
-  geom_sf(data = geom_prov, color='darkred', fill=NA, linewidth=2) +
+  # geom_sf(data = geom_prov, color='darkred', fill=NA, linewidth=2) +
   scale_fill_manual(values = c("1" = "steelblue", "2" = "darkorange")) +
   guides(fill = guide_legend(title = "Cluster", title.position = "bottom", title.hjust=0.5,
                              label.position = "bottom", keywidth = unit(1,"cm"))) +
@@ -176,7 +179,7 @@ plt_true_clust <- ggplot() +
 plt_best_clust <- ggplot() +
   geom_sf(data = sf_mun, aes(fill=best_clust), color='gray25', linewidth=0.5, alpha=0.75) +
   geom_sf(data = geom_prov, color='darkred', fill=NA, linewidth=2) +
-  scale_fill_manual(values = c("1" = "steelblue", "2" = "darkorange")) +
+  scale_fill_manual(values = c("1" = "darkorange", "2" = "steelblue")) +
   guides(fill = guide_legend(title = "Cluster", title.position = "bottom", title.hjust=0.5,
                              label.position = "bottom", keywidth = unit(1,"cm"))) +
   theme_void() + theme(legend.position = "none")

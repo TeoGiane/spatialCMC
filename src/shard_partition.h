@@ -73,12 +73,12 @@ class ShardPartition {
 
 	// Generate n samples of the quantity of interest either from the prior
 	// or the full conditional of the hierarchy.
-	// Eigen::VectorXd sample_qoi(size_t n, bool prior);
+	Eigen::VectorXd sample_qoi(size_t n, bool prior);
 
 	private:
 
 	// Compute quantity of interest from sampled state of the hierarchy
-	// double qoi_from_state(const ClustState & state) const ;
+	double qoi_from_state(const ClustState & state) const ;
 
 };
 

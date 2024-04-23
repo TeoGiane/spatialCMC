@@ -7,7 +7,7 @@ library("parallel")
 library("sf")
 
 # Build spatialCMC (if necessary)
-build_spatialCMC()
+# build_spatialCMC()
 
 ###########################################################################
 # Auxiliary functions -----------------------------------------------------
@@ -155,9 +155,86 @@ plt_best_clust <- ggplot() +
   theme_void() + theme(legend.position = "none")
 
 # Show posterior findings
-titletext <- grid::textGrob(bquote(alpha~"="~.(alpha)~","~lambda~"="~.(lambda)),
-                            gp=grid::gpar(fontsize=16))
+# titletext <- grid::textGrob(bquote(alpha~"="~.(alpha)~","~lambda~"="~.(lambda)),
+#                             gp=grid::gpar(fontsize=16))
 gridExtra::grid.arrange(plt_nclust, plt_best_clust, ncol=2) #, top = titletext)
 # plt_psm
 
 ###########################################################################
+
+# Prove varie
+cell_size <- c(diff(st_bbox(geom_mun[1])[c(1,3)]), diff(st_bbox(geom_mun[1])[c(2,4)]))
+prov_1 <- st_make_grid(square, n = c(18,18), offset = c(6*cell_size[1], 6*cell_size[2]), cellsize = cell_size)
+prov_2 <- st_difference(st_make_grid(square, n = c(24,24), offset = c(3*cell_size[1], 3*cell_size[2]), cellsize = cell_size), st_union(prov_1))
+prov_3 <- st_difference(st_make_grid(square, n = c(30,30), offset = c(0*cell_size[1], 0*cell_size[2]), cellsize = cell_size),
+                        st_union(st_union(prov_1), st_union(prov_2)))
+geom_prov <- st_as_sfc(rbind(st_union(prov_1), st_union(prov_2), st_union(prov_3)))
+
+# plot(geom_mun); plot(prov_1, col='red', add=T); plot(prov_2, col='blue', add=T); plot(prov_3, col='green', add=T)
+shard_geoms <- list(prov_1, prov_2, prov_3)
+get_prov_allocs <- function(geom_mun, shard_geoms){
+  out <- numeric(length(geom_mun))
+  for (i in 1:length(shard_geoms)) {
+    idx <- unlist(st_contains(shard_geoms[[i]], st_centroid(geom_mun)))
+    out[idx] <- (i-1)
+  }
+  return(out)
+}
+
+prov_allocs <- get_prov_allocs(geom_mun, shard_geoms)
+
+# Prova suggerimento di mario - blocchi 5x5
+cell_size <- c(diff(st_bbox(geom_mun[1])[c(1,3)]), diff(st_bbox(geom_mun[1])[c(2,4)]))
+geom_prov <- st_make_grid(square, n = c(6,6), offset = c(0,0))
+prvidx <- sample(1:3, length(geom_prov), replace = T)
+geom_prov <- st_as_sfc(rbind(st_union(geom_prov[prvidx == 1]), st_union(geom_prov[prvidx == 2]), st_union(geom_prov[prvidx == 3])))
+
+get_prov_allocs <- function(geom_mun, geom_prov){
+  out <- numeric(length(geom_mun))
+  for (i in 1:length(geom_prov)) {
+    idx <- unlist(st_contains(geom_prov[i], st_centroid(geom_mun)))
+    out[idx] <- (i-1)
+  }
+  return(out)
+}
+
+prov_allocs <- get_prov_allocs(geom_mun, geom_prov)
+
+# Prova suggerimento di mario - blocchi 6x6
+cell_size <- c(diff(st_bbox(geom_mun[1])[c(1,3)]), diff(st_bbox(geom_mun[1])[c(2,4)]))
+geom_prov <- st_make_grid(square, n = c(5,5), offset = c(0,0))
+prvidx <- sample(1:3, length(geom_prov), replace = T)
+geom_prov <- st_as_sfc(rbind(st_union(geom_prov[prvidx == 1]), st_union(geom_prov[prvidx == 2]), st_union(geom_prov[prvidx == 3])))
+
+get_prov_allocs <- function(geom_mun, geom_prov){
+  out <- numeric(length(geom_mun))
+  for (i in 1:length(geom_prov)) {
+    idx <- unlist(st_contains(geom_prov[i], st_centroid(geom_mun)))
+    out[idx] <- (i-1)
+  }
+  return(out)
+}
+
+prov_allocs <- get_prov_allocs(geom_mun, geom_prov)
+
+# Un po' di codice per voronoi tessellation (Ogni punto è in un tassello)
+box <- rbind(c(0,0), c(0,1), c(1,1), c(1,0), c(0,0))
+square <- st_polygon(list(box))
+
+x <- runif(50); y <- runif(50)
+points <- st_cast(st_sfc(st_multipoint(cbind(x,y))), "POINT")
+tessellation <- st_collection_extract(st_voronoi(st_union(points)), "POLYGON")
+cropped_tessellation <- st_intersection(tessellation, square)
+
+# Plot
+plot(cropped_tessellation)
+plot(points, pch=16, col='blue', add = TRUE)
+
+# IDEA A GRANDI LINEE PER UNA SHARD PARTITIONING SPAZIALE E "RAPPRESENTATIVA" (+ O -)
+#
+# A questo punto sarebbe carino avere una selezione di punti iniziale con un processo
+# repulsivo dal quale è facile campionare. Da lì, genero la voronoi e mi ricavo delle
+# tessellazioni contenenti più di un'area (il check è fatto in base ai centroidi)
+# Dopo di che, gli inviluppi convessi di tali tessellazioni vengono raggruppati
+# tramite estrazione casuale con numero di possibili outcome pari al numero finale di shard.
+# 
