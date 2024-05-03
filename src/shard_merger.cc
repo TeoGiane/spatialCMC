@@ -170,7 +170,7 @@ double ShardMerger::compute_logBF(ShardPartition & lhs, ShardPartition & rhs) {
   // Compute Monte Carlo samples from prior and posterior
 	for (size_t k = 0; k < n_sim; k++) {
     // Using L2 distance
-		// l2_prior(k) = sample_l2_distance(lhs, rhs, prior);
+	// l2_prior(k) = sample_l2_distance(lhs, rhs, prior);
     // l2_post(k) = sample_l2_distance(lhs, rhs, !prior);
     // Using L1 distance of the parameter's vector
   	qoi_prior(k) = sample_qoi(lhs, rhs, prior);

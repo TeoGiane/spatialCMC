@@ -4,9 +4,6 @@
 // STL
 #include <deque>
 
-// // GEOS C API
-// #include <geos_c.h>
-
 // bayesmix
 #include "src/includes.h"
 
@@ -108,10 +105,13 @@ class ShardMerger {
 		double out = 0;
 		if (lhs.has_uni_ls_state() && rhs.has_uni_ls_state()) {
 			// Gaussian case
-			double lmean = lhs.uni_ls_state().mean(), lvar = lhs.uni_ls_state().var();
-			double rmean = rhs.uni_ls_state().mean(), rvar = rhs.uni_ls_state().var();
+			double lmean = lhs.uni_ls_state().mean(); //, lvar = lhs.uni_ls_state().var();
+			double rmean = rhs.uni_ls_state().mean(); //, rvar = rhs.uni_ls_state().var();
+			// (Approx) W2 distance
+			out = std::abs(lmean-rmean); //*(lmean-rmean);
+			// out += (lvar + rvar - 2*std::sqrt(lvar*rvar));
 			// Compute sum of absolute distance between each element of parameters' vector
-			out = std::abs(lmean - rmean) + std::abs(std::sqrt(lvar) - std::sqrt(rvar));
+			// out = std::abs(lmean-rmean) + std::abs(std::sqrt(lvar)-std::sqrt(rvar));
 			// Return
 			return out;
 		} else if (lhs.has_custom_state() && rhs.has_custom_state()) {
@@ -119,10 +119,13 @@ class ShardMerger {
 			spatialcmc::PoissonState unp_state; 
 			lhs.custom_state().UnpackTo(&unp_state); double lrate = unp_state.rate();
 			rhs.custom_state().UnpackTo(&unp_state); double rrate = unp_state.rate();
+			// (Approx) W2 distance
+			out = std::abs(lrate-rrate); //*(lrate-rrate);
+			// out += (lrate + rrate -2*std::sqrt(lrate*rrate));
 			// Compute sum of absolute distance between each element of parameters' vector
-			out = std::abs(lrate - rrate);
+			// out = std::abs(lrate-rrate) + std::abs(std::sqrt(lrate)-std::sqrt(rrate));
 			// Return
-			return out;
+			return std::sqrt(out);
 		} else {
 			// No available cluster state
 			throw std::runtime_error("compute_qoi() not implemented for this cluster state.");
