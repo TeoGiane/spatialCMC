@@ -195,9 +195,9 @@ plt_diff <- ggplot() +
   geom_sf(data = sf_mun, aes(fill=std_diff), color='gray25', linewidth=0.5, alpha=0.75) +
   geom_sf(data = geom_prov, color='darkred', fill=NA, linewidth=2) +
   scale_fill_gradient(low="gray80", high = "orange") +
-  guides(fill = guide_colorbar(title = "Diff.", title.position = "bottom",
-                               title.hjust=0.5, barwidth = unit(3,"in"))) +
+  guides(fill = guide_colorbar(title = "Std. Diff.", title.position = "bottom",
+                               title.hjust=0.5, barwidth = unit(2.5,"in"))) +
   theme_void() + theme(legend.position = "bottom")
-plt_diff
+# pdf("plt_diff.pdf", height = 4, width = 4); plt_diff; dev.off()
 
 ###########################################################################
