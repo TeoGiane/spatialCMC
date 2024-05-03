@@ -55,9 +55,10 @@ set.seed(1996)
 data <- rpois(Ndata, gamma[clust_allocs])
 
 # Generate sf object
-df_mun <- data.frame("province_idx" = prov_allocs,
-                     "data" = data)
+df_mun <- data.frame("data" = data)
 sf_mun <- st_sf(df_mun, geometry = geom_mun)
+sf_mun$province_idx <- prov_allocs
+sf_mun$true_clust <- as.factor(clust_allocs)
 
 # Generate common timestamp (for scenario and output matching)
 # timestamp <- format(Sys.time(), "%Y%m%d-%H%M")
@@ -120,13 +121,14 @@ unique_values <- get_unique_values(chain)
 Nclust <- apply(cluster_allocs, 1, function(x){length(unique(x))})
 # psm <- salso::psm(cluster_allocs)
 sf_mun$best_clust <- as.factor(salso::salso(cluster_allocs, loss = "VI"))
-sf_mun$true_clust <- as.factor(clust_allocs)
 
 # Plot - Posterior number of clusters
 plt_nclust <- ggplot(data = data.frame(prop.table(table(Nclust))), aes(x=Nclust,y=Freq)) +
   geom_bar(stat = "identity", color=NA, linewidth=0, fill='white') +
   geom_bar(stat = "identity", color='steelblue', alpha=0.4, linewidth=0.7, fill='steelblue') +
   xlab("N° of Clusters") + ylab("Post. Prob.")
+# pdf("plt_nclust.pdf", height = 4, width = 4); plt_nclust; dev.off()
+plt_nclust
 
 # Plot - Posterior similarity matrix
 # plt_psm <- ggplot(data = reshape2::melt(psm, c("x", "y"))) +
@@ -151,8 +153,9 @@ plt_best_clust <- ggplot() +
   geom_sf(data = geom_prov, color='darkred', fill=NA, linewidth=2) +
   scale_fill_manual(values = c("1" = "steelblue", "2" = "darkorange")) +
   guides(fill = guide_legend(title = "Cluster", title.position = "bottom", title.hjust=0.5,
-                             label.position = "bottom", keywidth = unit(1,"cm"))) +
-  theme_void() + theme(legend.position = "none")
+                             label.position = "bottom")) +
+  theme_void() + theme(legend.position = "bottom")
+pdf("plt_best_clust.pdf", height = 4, width = 4); plt_best_clust; dev.off()
 
 # Show posterior findings
 # titletext <- grid::textGrob(bquote(alpha~"="~.(alpha)~","~lambda~"="~.(lambda)),
@@ -161,6 +164,32 @@ gridExtra::grid.arrange(plt_nclust, plt_best_clust, ncol=2) #, top = titletext)
 # plt_psm
 
 ###########################################################################
+
+# Visualization
+df_text <- data.frame("label" = c(1,2,3), st_coordinates(st_centroid(geom_prov)))
+plt_shardsplit <- ggplot() +
+  geom_sf(data = geom_prov, fill=NA, color='gray25', linewidth=1) +
+  geom_text(data = df_text, aes(x=X,y=Y,label=label), size=8, color='gray25') +
+  theme_void()
+pdf("plt_shardsplit.pdf", height = 4, width = 4); plt_shardsplit; dev.off()
+
+plt_data <- ggplot() +
+  geom_sf(data = sf_mun, aes(fill=data), color='gray25', linewidth=0.5) +
+  scale_fill_gradient(low = 'steelblue', high = 'darkorange') +
+  guides(fill = guide_colorbar(title = "Data", direction = "horizontal", title.hjust=0.5,
+                               title.position = "bottom", label.position = "bottom", keywidth = unit(2.5,"in"))) +
+  theme_void() + theme(legend.position = "bottom")
+pdf("plt_data.pdf", height = 4, width = 4); plt_data; dev.off()
+
+plt_true_clust <- ggplot() +
+  geom_sf(data = sf_mun, aes(fill=true_clust), color='gray25', linewidth=0.5, alpha=0.75) +
+  geom_sf(data = geom_prov, color='darkred', fill=NA, linewidth=2) +
+  scale_fill_manual(values = c("1" = "steelblue", "2" = "darkorange")) +
+  guides(fill = guide_legend(title = "Cluster", title.position = "bottom", title.hjust=0.5,
+                             label.position = "bottom")) +
+  theme_void() + theme(legend.position = "bottom")
+pdf("plt_true_clust.pdf", height = 4, width = 4); plt_true_clust; dev.off()
+
 
 # Prove varie
 cell_size <- c(diff(st_bbox(geom_mun[1])[c(1,3)]), diff(st_bbox(geom_mun[1])[c(2,4)]))
