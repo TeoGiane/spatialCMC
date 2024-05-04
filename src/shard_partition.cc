@@ -58,7 +58,7 @@ void ShardPartition::merge(const ShardPartition & rhs) {
 	num_cluster = std::min(num_cluster, rhs.num_cluster);
 	// Update data in hierarchy here
 	for (size_t i = 0; i < rhs.data.rows(); i++){
-		hierarchy->add_datum(data.rows() + i, rhs.data.row(i), true);
+		hierarchy->add_datum(data.rows() + i, rhs.data.row(i));
 	}
 	// Merge data
 	data.conservativeResize(data.rows() + rhs.data.rows(), data.cols());
