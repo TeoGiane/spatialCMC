@@ -94,7 +94,9 @@ class ShardMerger {
 	// Generate a Mone Carlo sample for the L^2 distance between density functions
 	double sample_qoi(ShardPartition & lhs, ShardPartition & rhs, bool prior) {
 		bayesmix::AlgorithmState::ClusterState state_lhs, state_rhs;
+		std::cout << "LHS: prior? " << std::boolalpha << prior << std::endl;
 		state_lhs = prior ? *(lhs.sample_prior()) : *(lhs.sample_full_cond());
+		std::cout << "RHS: prior? " << std::boolalpha << prior << std::endl;
 		state_rhs = prior ? *(rhs.sample_prior()) : *(rhs.sample_full_cond());
 		return compute_qoi(state_lhs, state_rhs);
 	}
@@ -125,7 +127,7 @@ class ShardMerger {
 			// Compute sum of absolute distance between each element of parameters' vector
 			// out = std::abs(lrate-rrate) + std::abs(std::sqrt(lrate)-std::sqrt(rrate));
 			// Return
-			return std::sqrt(out);
+			return out;
 		} else {
 			// No available cluster state
 			throw std::runtime_error("compute_qoi() not implemented for this cluster state.");
