@@ -166,7 +166,7 @@ double ShardMerger::compute_logBF(ShardPartition & lhs, ShardPartition & rhs) {
 	for (size_t k = 0; k < n_sim; k++) {
 		std::cout << "sample: " << k << std::endl;
     // Using L2 distance
-	// l2_prior(k) = sample_l2_distance(lhs, rhs, prior);
+	  // l2_prior(k) = sample_l2_distance(lhs, rhs, prior);
     // l2_post(k) = sample_l2_distance(lhs, rhs, !prior);
     // Using L1 distance of the parameter's vector
   	qoi_prior(k) = sample_qoi(lhs, rhs, prior);

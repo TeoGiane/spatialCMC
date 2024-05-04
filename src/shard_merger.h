@@ -107,10 +107,10 @@ class ShardMerger {
 		double out = 0;
 		if (lhs.has_uni_ls_state() && rhs.has_uni_ls_state()) {
 			// Gaussian case
-			double lmean = lhs.uni_ls_state().mean(); //, lvar = lhs.uni_ls_state().var();
-			double rmean = rhs.uni_ls_state().mean(); //, rvar = rhs.uni_ls_state().var();
+			double lmean = lhs.uni_ls_state().mean(), lvar = lhs.uni_ls_state().var();
+			double rmean = rhs.uni_ls_state().mean(), rvar = rhs.uni_ls_state().var();
 			// (Approx) W2 distance
-			out = std::abs(lmean-rmean); //*(lmean-rmean);
+			out = std::abs(lmean-rmean) + std::abs(std::sqrt(lvar)-std::sqrt(rvar));
 			// out += (lvar + rvar - 2*std::sqrt(lvar*rvar));
 			// Compute sum of absolute distance between each element of parameters' vector
 			// out = std::abs(lmean-rmean) + std::abs(std::sqrt(lvar)-std::sqrt(rvar));
