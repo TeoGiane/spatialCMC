@@ -46,19 +46,16 @@ bayesmix::AlgorithmState ShardMerger::merge(size_t iter) {
 	
 	// Merging at a fixed iteration
 	for (auto it = local_clusters.begin(); it != local_clusters.end(); ++it) {
-		
 		// Get lhs as reference (just to make code a little bit more readable)
 		auto & lhs = *it;
-
 		// Lambda function that computes the merge condition (with automatic merging)
-		auto merge_condition = [this, &lhs/*, &ctx*/] (ShardPartition & rhs) {
+		auto merge_condition = [this, &lhs] (ShardPartition & rhs) {
 			bool merge = (lhs.get_shard_name() != rhs.get_shard_name());
 			if(merge) { merge *= intersects(lhs, rhs); }
-			if(merge) { merge *= (2*compute_logBF(lhs, rhs) > 10.0); }
+			if(merge) { merge *= (2*compute_logBF(lhs, rhs) > 5.0); }
 			if(merge) { lhs.merge(rhs); }
 			return merge;
 		};
-
 		// Verify the condition for all the remaining local_clusters and erase elements that have been merged
 		auto end = std::remove_if(it, local_clusters.end(), merge_condition);
 		local_clusters.erase(end, local_clusters.end());
@@ -164,7 +161,7 @@ double ShardMerger::compute_logBF(ShardPartition & lhs, ShardPartition & rhs) {
   Eigen::VectorXd qoi_prior(n_sim), qoi_post(n_sim); bool prior = true;
   // Compute Monte Carlo samples from prior and posterior
 	for (size_t k = 0; k < n_sim; k++) {
-		std::cout << "sample: " << k << std::endl;
+		// std::cout << "sample: " << k << std::endl;
     // Using L2 distance
 	  // l2_prior(k) = sample_l2_distance(lhs, rhs, prior);
     // l2_post(k) = sample_l2_distance(lhs, rhs, !prior);
@@ -201,6 +198,6 @@ double ShardMerger::compute_logBF(ShardPartition & lhs, ShardPartition & rhs) {
 	// double logBF = (prior_odd == 0) ?  stan::math::NEGATIVE_INFTY : (std::log(post_odd) - std::log(prior_odd));
 
 	// return logBF
-	std::cout << "2logBF: " << 2*logBF << std::endl;
+	// std::cout << "2logBF: " << 2*logBF << std::endl;
 	return logBF;
 }

@@ -179,7 +179,7 @@ int main(int argc, char const *argv[]) {
   std::cout << "Merging MCMC chains..." << std::endl;
   // #pragma omp parallel for num_threads(num_threads)
   for (size_t i = 0; i < state_vect.size(); i++) {
-    std::cout << "ITERATION: " << i << std::endl;
+    // std::cout << "ITERATION: " << i << std::endl;
     state_vect[i].CopyFrom(shard_merger.merge(i));
 		++(*bar);
     // #pragma omp critical
