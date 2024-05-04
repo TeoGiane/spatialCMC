@@ -32,11 +32,6 @@ unsigned int ShardMerger::get_num_iter() const {
 
 bayesmix::AlgorithmState ShardMerger::merge(size_t iter) {
 
-	// Initialize GEOS
-	// GEOSContextHandle_t ctx = GEOS_init_r();
-	// GEOSContext_setNoticeHandler_r(ctx, spatialcmc::geos_msg_handler);
-	// GEOSContext_setErrorHandler_r(ctx, spatialcmc::geos_msg_handler);
-
 	// Generate local clusters 
 	auto local_clusters = generate_local_clusters(iter);
 	// std::cout << "Generated local clusters" << std::endl;
@@ -59,7 +54,7 @@ bayesmix::AlgorithmState ShardMerger::merge(size_t iter) {
 		auto merge_condition = [this, &lhs/*, &ctx*/] (ShardPartition & rhs) {
 			bool merge = (lhs.get_shard_name() != rhs.get_shard_name());
 			if(merge) { merge *= intersects(lhs, rhs); }
-			if(merge) { merge *= (2*compute_logBF(lhs, rhs) > 2.0); }
+			if(merge) { merge *= (2*compute_logBF(lhs, rhs) > 10.0); }
 			if(merge) { lhs.merge(rhs); }
 			return merge;
 		};
@@ -169,6 +164,7 @@ double ShardMerger::compute_logBF(ShardPartition & lhs, ShardPartition & rhs) {
   Eigen::VectorXd qoi_prior(n_sim), qoi_post(n_sim); bool prior = true;
   // Compute Monte Carlo samples from prior and posterior
 	for (size_t k = 0; k < n_sim; k++) {
+		std::cout << "sample: " << k << std::endl;
     // Using L2 distance
 	// l2_prior(k) = sample_l2_distance(lhs, rhs, prior);
     // l2_post(k) = sample_l2_distance(lhs, rhs, !prior);
@@ -205,5 +201,6 @@ double ShardMerger::compute_logBF(ShardPartition & lhs, ShardPartition & rhs) {
 	// double logBF = (prior_odd == 0) ?  stan::math::NEGATIVE_INFTY : (std::log(post_odd) - std::log(prior_odd));
 
 	// return logBF
+	std::cout << "2logBF: " << 2*logBF << std::endl;
 	return logBF;
 }
