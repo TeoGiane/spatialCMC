@@ -177,11 +177,12 @@ int main(int argc, char const *argv[]) {
 
   // Merging shards in parallel
   std::cout << "Merging MCMC chains..." << std::endl;
-  #pragma omp parallel for num_threads(num_threads)
+  // #pragma omp parallel for num_threads(num_threads)
   for (size_t i = 0; i < state_vect.size(); i++) {
+    std::cout << "ITERATION: " << i << std::endl;
     state_vect[i].CopyFrom(shard_merger.merge(i));
 		++(*bar);
-    #pragma omp critical
+    // #pragma omp critical
 		bar->display();
   }
 	bar->done();
