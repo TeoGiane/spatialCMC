@@ -9,6 +9,9 @@ ShardMerger::ShardMerger(const std::vector<Shard> & _shards,
 	global_card = global_adj_matrix.rows();
 	num_iter = mcmc_chains[0].state_size();
 	num_shards = shards.size();
+	// Set seed when constructor is called
+	auto &rng = bayesmix::Rng::Instance().get();
+	rng.seed(shards[0].get_seed());
 	// for (size_t i = 0; i < num_shards; i++) {
 	// 	global_card += shards[i].get_data().rows();
 	// }
@@ -37,8 +40,8 @@ bayesmix::AlgorithmState ShardMerger::merge(size_t iter) {
 	// std::cout << "Generated local clusters" << std::endl;
 
 	// Shuffle local cluster
-	std::random_device rd; std::mt19937 g(rd());
-	std::shuffle(local_clusters.begin(), local_clusters.end(), g);
+	auto &rng = bayesmix::Rng::Instance().get();
+	std::shuffle(local_clusters.begin(), local_clusters.end(), rng);
 
 	// Check - OK
 	// std::cout << "Before Merging: " << std::endl << std::endl;
