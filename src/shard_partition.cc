@@ -55,6 +55,7 @@ size_t ShardPartition::get_num_cluster() const {
 
 void ShardPartition::merge(const ShardPartition & rhs) {
 	// New cluster name
+	num_shard = std::min(num_shard, rhs.num_shard);
 	num_cluster = std::min(num_cluster, rhs.num_cluster);
 	// Update data in hierarchy here
 	for (size_t i = 0; i < rhs.data.rows(); i++){
