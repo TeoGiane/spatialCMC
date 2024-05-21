@@ -5,7 +5,7 @@
 
 #include "poisson_state.pb.h"
 
-#include "spatialcmc_utils.h"
+#include "cmc/spatialcmc_utils.h"
 #include "src/hierarchies/likelihoods/states/base_state.h"
 
 namespace State {

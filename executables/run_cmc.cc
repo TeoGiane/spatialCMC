@@ -18,10 +18,10 @@
 #include "hierarchies/poisson_gamma_hierarchy.h"
 #include "hierarchies/empty_hierarchy.h"
 #include "mixing/spp_mixing.h"
-#include "shard.h"
-#include "shard_merger.h"
-#include "shard_partition.h"
-#include "spatialcmc_utils.h"
+#include "cmc/shard.h"
+#include "cmc/shard_merger.h"
+#include "cmc/shard_partition.h"
+#include "cmc/spatialcmc_utils.h"
 
 // Check ArgParse input arguments
 void check_args(const argparse::ArgumentParser &args) {

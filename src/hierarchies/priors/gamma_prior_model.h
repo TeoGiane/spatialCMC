@@ -11,7 +11,7 @@
 #include "poisson_gamma_prior.pb.h"
 
 #include "hierarchies/likelihoods/states/poisson_state.h"
-#include "spatialcmc_utils.h"
+#include "cmc/spatialcmc_utils.h"
 #include "src/hierarchies/priors/base_prior_model.h"
 #include "src/utils/rng.h"
 

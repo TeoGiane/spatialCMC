@@ -6,7 +6,7 @@
 #include "hierarchies/likelihoods/poisson_likelihood.h"
 #include "hierarchies/priors/gamma_prior_model.h"
 #include "hierarchies/updaters/poisson_gamma_updater.h"
-#include "spatialcmc_utils.h"
+#include "cmc/spatialcmc_utils.h"
 #include "src/hierarchies/base_hierarchy.h"
 
 class PoissonGammaHierarchy : public BaseHierarchy<PoissonGammaHierarchy, PoissonLikelihood, GammaPriorModel> {
