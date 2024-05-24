@@ -9,7 +9,7 @@
 #include "hierarchies/poisson_gamma_hierarchy.h"
 #include "hierarchies/empty_hierarchy.h"
 #include "mixing/spp_mixing.h"
-#include "spatialcmc_utils.h"
+#include "cmc/spatialcmc_utils.h"
 
 #define EMPTYSTR std::string("\"\"")
 

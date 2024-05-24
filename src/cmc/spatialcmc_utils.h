@@ -26,7 +26,7 @@ namespace spatialcmc {
 
   // Unpack google::protobuf::Any message
 	template <typename T>
-	T unpack_protobuf_any(const google::protobuf::Any & _packed_msg) {
+	T unpack_to(const google::protobuf::Any & _packed_msg) {
 		T unpacked_msg;
 		if (_packed_msg.Is<T>()) {
 			_packed_msg.UnpackTo(&unpacked_msg);

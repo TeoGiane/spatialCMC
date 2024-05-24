@@ -31,11 +31,9 @@ class PoissonGammaHierarchy : public BaseHierarchy<PoissonGammaHierarchy, Poisso
     like->set_state(state, false);
   };
   
-  double marg_lpdf(ProtoHypersPtr hier_params, const Eigen::RowVectorXd &datum) const override {
-    // Unpack custom state
-    bayesmix::GammaDistribution unp_hier_params; hier_params->custom_state().UnpackTo(&unp_hier_params);
-    // auto unp_hier_params = spatialcmc::unpack_protobuf_any<bayesmix::GammaDistribution>(hier_params->custom_state());
-    return stan::math::neg_binomial_lpmf(datum(0), unp_hier_params.shape(), unp_hier_params.rate());
+  double marg_lpdf(ProtoHypersPtr _hier_params, const Eigen::RowVectorXd &datum) const override {
+    auto hier_params = spatialcmc::unpack_to<bayesmix::GammaDistribution>(_hier_params->custom_state());
+    return stan::math::neg_binomial_lpmf(datum(0), hier_params.shape(), hier_params.rate());
   };
 };
 

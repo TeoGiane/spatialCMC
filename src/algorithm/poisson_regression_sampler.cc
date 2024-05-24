@@ -1,6 +1,6 @@
-#include "sampler.h"
+#include "poisson_regression_sampler.h"
 
-void BNPDownscalingSampler::run(BaseCollector *collector) {
+void PoissonRegressionSampler::run(BaseCollector *collector) {
   initialize();
   if (verbose) {
     print_startup_message();
@@ -33,8 +33,8 @@ void BNPDownscalingSampler::run(BaseCollector *collector) {
   }
 }
 
-void BNPDownscalingSampler::set_data(const Eigen::VectorXi & data_) { data = data_; }
+// void PoissonRegressionSampler::set_data(const Eigen::VectorXi & data_) { data = data_; }
 
-void BNPDownscalingSampler::set_state_proto(const std::shared_ptr<google::protobuf::Message> state) {
-  curr_state.CopyFrom(google::protobuf::internal::down_cast<bayesmix::BNPDownscalingState &>(*state.get()));
+void PoissonRegressionSampler::set_state_proto(const std::shared_ptr<google::protobuf::Message> state) {
+  curr_state.CopyFrom(google::protobuf::internal::down_cast<spatialcmc::PoisRegAlgorithmState &>(*state.get()));
 }

@@ -56,44 +56,61 @@ success <- file.remove(files_to_parse)
 filename <- sprintf("%s/NumClust_alpha-%g_lambda-%g.csv", input_dir, extra_args$alpha, extra_args$lambda)
 write.csv(out, file = filename, row.names = FALSE)
 
-# # Generate plot
-# library("ggplot2")
-# library("dplyr")
-# # Get 0.001
-# Nclust_df <- read.csv("output/NumClust_alpha-1_lambda-0.001.csv")
-# Nclust_df <- Nclust_df %>% 
-#   select(c("N", "Mean")) %>%
-#   left_join(data.frame("N"=Nclust_df$N, "alpha"=rep(1,length(Nclust_df)), "lambda"=rep(1e-3,length(Nclust_df))), by = "N")
-# # Add 0.01
-# tmp <- read.csv("output/NumClust_alpha-1_lambda-0.01.csv") %>% 
-#   select(c("N", "Mean")) %>%
-#   left_join(data.frame("N"=Nclust_df$N, "alpha"=rep(1,length(Nclust_df)), "lambda"=rep(1e-2,length(Nclust_df))), by = "N")
-# Nclust_df <- rbind(Nclust_df, tmp); rm(tmp)
-# # Add 0.1
-# tmp <- read.csv("output/NumClust_alpha-1_lambda-0.1.csv") %>% 
-#   select(c("N", "Mean")) %>%
-#   left_join(data.frame("N"=Nclust_df$N, "alpha"=rep(1,length(Nclust_df)), "lambda"=rep(1e-1,length(Nclust_df))), by = "N")
-# Nclust_df <- rbind(Nclust_df, tmp); rm(tmp)
-# # Proper cast
-# Nclust_df$alpha <- as.factor(Nclust_df$alpha)
-# Nclust_df$lambda <- as.factor(Nclust_df$lambda)
-# # plot
-# plt <- ggplot(data = Nclust_df) +
-#   geom_line(aes(x=N, y=Mean, colour=lambda)) + # , linetype=alpha)) +
-#   xlab("Num. Obs.") + ylab("Num. Clust") + 
-#   guides(color=guide_legend(bquote(lambda), position = "bottom", direction = "horizontal"))
+# Generate plot
+library("ggplot2")
+library("dplyr")
+# Get 1, 0.001
+Nclust_df <- read.csv("output/NumClust_alpha-1_lambda-0.001.csv")
+Nclust_df <- Nclust_df %>%
+select(c("N", "Mean")) %>%
+left_join(data.frame("N"=Nclust_df$N, "alpha"=rep(1,length(Nclust_df)), "lambda"=rep(1e-3,length(Nclust_df))), by = "N")
+# Add 1, 0.01
+tmp <- read.csv("output/NumClust_alpha-1_lambda-0.01.csv") %>%
+  select(c("N", "Mean")) %>%
+  left_join(data.frame("N"=Nclust_df$N, "alpha"=rep(1,length(Nclust_df)), "lambda"=rep(1e-2,length(Nclust_df))), by = "N")
+Nclust_df <- rbind(Nclust_df, tmp); rm(tmp)
+# Add 1, 0.1
+tmp <- read.csv("output/NumClust_alpha-1_lambda-0.1.csv") %>%
+  select(c("N", "Mean")) %>%
+  left_join(data.frame("N"=Nclust_df$N, "alpha"=rep(1,length(Nclust_df)), "lambda"=rep(1e-1,length(Nclust_df))), by = "N")
+Nclust_df <- rbind(Nclust_df, tmp); rm(tmp)
+# Add 5, 0.001
+tmp <- read.csv("output/NumClust_alpha-5_lambda-0.001.csv") %>%
+  select(c("N", "Mean")) %>%
+  left_join(data.frame("N"=Nclust_df$N, "alpha"=rep(5,length(Nclust_df)), "lambda"=rep(1e-3,length(Nclust_df))), by = "N")
+Nclust_df <- rbind(Nclust_df, tmp); rm(tmp)
+# Add 5, 0.01
+tmp <- read.csv("output/NumClust_alpha-5_lambda-0.01.csv") %>%
+  select(c("N", "Mean")) %>%
+  left_join(data.frame("N"=Nclust_df$N, "alpha"=rep(5,length(Nclust_df)), "lambda"=rep(1e-2,length(Nclust_df))), by = "N")
+Nclust_df <- rbind(Nclust_df, tmp); rm(tmp)
+# Add 5, 0.1
+tmp <- read.csv("output/NumClust_alpha-5_lambda-0.1.csv") %>%
+  select(c("N", "Mean")) %>%
+  left_join(data.frame("N"=Nclust_df$N, "alpha"=rep(5,length(Nclust_df)), "lambda"=rep(1e-1,length(Nclust_df))), by = "N")
+Nclust_df <- rbind(Nclust_df, tmp); rm(tmp)
+# Proper cast
+Nclust_df$alpha <- as.factor(Nclust_df$alpha)
+Nclust_df$lambda <- as.factor(Nclust_df$lambda)
+# plot
+plt <- ggplot(data = Nclust_df) +
+  geom_line(aes(x=N, y=Mean, colour=lambda , linetype=alpha), linewidth=1.2) +
+  xlab("Num. Obs.") + ylab("Num. Clust") +
+  guides(color=guide_legend(bquote(lambda), position = "bottom", direction = "horizontal")) +
+  guides(linetype=guide_legend(bquote(alpha), position = "bottom", direction = "horizontal"))
+pdf("output/plots/NumClustTrend.pdf", height = 4, width = 6); plt; dev.off()
 
-# # Barplot number of neighbours (LOMBARDIA)
-# load("../ArealData_Scenario2/input/clean_data.dat")
-# nb_mat_lombardy <- spdep::nb2mat(spdep::poly2nb(st_geometry(sf_mun)), style = "B", zero.policy = TRUE)
-# NB <- apply(nb_mat_lombardy, 1, sum)
-# title <- sprintf("../ArealData_Scenario2/output/NB_%s.pdf", "Lombardia")
-# pdf(file = title, height = 4, width = 4); barplot(table(NB), main = "Lombardia"); dev.off()
-# # Barplot number of neighbours (PROVINCE)
-# for (prov in levels(sf_mun$PROVINCIA)) {
-#   adj_mat <- spdep::nb2mat(spdep::poly2nb(st_geometry(sf_mun[which(sf_mun$PROVINCIA == prov),])), style = "B", zero.policy = TRUE)
-#   NB <- apply(adj_mat, 1, sum)
-#   title <- sprintf("../ArealData_Scenario2/output/NB_%s.pdf", prov)
-#   pdf(file = title, height = 4, width = 4); barplot(table(NB), main = prov); dev.off()
-# }
+# Barplot number of neighbours (LOMBARDIA)
+load("../ArealData_Scenario2/input/clean_data.dat")
+nb_mat_lombardy <- spdep::nb2mat(spdep::poly2nb(st_geometry(sf_mun)), style = "B", zero.policy = TRUE)
+NB <- apply(nb_mat_lombardy, 1, sum)
+title <- sprintf("../ArealData_Scenario2/output/NB_%s.pdf", "Lombardia")
+pdf(file = title, height = 4, width = 4); barplot(table(NB), main = "Lombardia"); dev.off()
+# Barplot number of neighbours (PROVINCE)
+for (prov in levels(sf_mun$PROVINCIA)) {
+  adj_mat <- spdep::nb2mat(spdep::poly2nb(st_geometry(sf_mun[which(sf_mun$PROVINCIA == prov),])), style = "B", zero.policy = TRUE)
+  NB <- apply(adj_mat, 1, sum)
+  title <- sprintf("../ArealData_Scenario2/output/NB_%s.pdf", prov)
+  pdf(file = title, height = 4, width = 4); barplot(table(NB), main = prov); dev.off()
+}
 
