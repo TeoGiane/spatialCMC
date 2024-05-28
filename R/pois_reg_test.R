@@ -16,12 +16,16 @@ get_cluster_allocs <- function(chain) {
   t(sapply(chain, function(state){state$partition$cluster_allocs}))
 }
 
+# # Extract regression coefficients from the MCMC chain
+get_regression_coefficients <- function(chain) {
+  t(sapply(chain, function(state){state$regression_coefficients$data}))
+}
+
 # # Extract unique_values list from the MCMC chain
 get_unique_values <- function(chain) {
   extract_unique_values <- function(cluster_state) {
-    sapply(cluster_state, function(x){
-      unp_x <- read(spatialcmc.PoissonState, x$custom_state$value)
-      return(unp_x$rate)
+    sapply(cluster_state, function(x) {
+      return(read(spatialcmc.PoissonState, x$custom_state$value)$rate)
     })
   }
   lapply(chain, function(state){extract_unique_values(state$partition$cluster_states)})
@@ -50,19 +54,20 @@ Ndata <- length(geom_mun)
 gamma <- c(10,20)
 clust_allocs <- c(rep(c(rep(1,15),rep(2,15)),15),
                   rep(c(rep(2,15), rep(1,15)),15))
+beta_true <- c(-0.5, 1)
+offset <- rep(1, Ndata)
+cov_matrix <- cbind(rnorm(Ndata), rnorm(Ndata))
 set.seed(1996)
-data <- rpois(Ndata, gamma[clust_allocs])
+data <- rpois(Ndata, offset*gamma[clust_allocs]*exp(cov_matrix %*% beta_true))
 
 # Generate sf object
-# df_mun <- data.frame("data" = data)
-# sf_mun <- st_sf(df_mun, geometry = geom_mun)
+df_mun <- data.frame("data" = data)
+sf_mun <- st_sf(df_mun, geometry = geom_mun)
 # sf_mun$province_idx <- prov_allocs
 # sf_mun$true_clust <- as.factor(clust_allocs)
 
 # Generate common timestamp (for scenario and output matching)
 # timestamp <- format(Sys.time(), "%Y%m%d-%H%M")
-offset <- rep(1,Ndata)
-cov_matrix <- matrix(0,Ndata,2)
 
 # Save generated scenario scenario
 # filename <- sprintf("%s/input/scenario1_%s.dat", getwd(), timestamp)
@@ -94,8 +99,8 @@ algo_params =
   "
   algo_id: 'Neal2'
   rng_seed: 10092022
-  iterations: 1000
-  burnin: 100
+  iterations: 6000
+  burnin: 1000
   init_num_clusters: 5
   "
 
@@ -116,6 +121,7 @@ fit <- pois_reg_mcmc(data, offset, cov_matrix, geom_mun, hier_params, mix_params
 chain <- sapply(fit, function(x){read(spatialcmc.PoisRegAlgorithmState,x)})
 
 # Get quantity of interest
+beta_chain <- get_regression_coefficients(chain)
 cluster_allocs <- get_cluster_allocs(chain)
 unique_values <- get_unique_values(chain)
 
@@ -131,6 +137,11 @@ plt_nclust <- ggplot(data = data.frame(prop.table(table(Nclust))), aes(x=Nclust,
   xlab("N° of Clusters") + ylab("Post. Prob.")
 # pdf("plt_nclust.pdf", height = 4, width = 4); plt_nclust; dev.off()
 plt_nclust
+
+# Plot - regression coefficients
+for (i in ncol(beta_chain)) {
+  plot(beta_chain[,i], type='l', main=bquote(beta[.(i)]), xlab = "Iteration", ylab = "Value")
+}
 
 # Plot - Posterior similarity matrix
 # plt_psm <- ggplot(data = reshape2::melt(psm, c("x", "y"))) +
@@ -268,4 +279,3 @@ plot(points, pch=16, col='blue', add = TRUE)
 # tessellazioni contenenti più di un'area (il check è fatto in base ai centroidi)
 # Dopo di che, gli inviluppi convessi di tali tessellazioni vengono raggruppati
 # tramite estrazione casuale con numero di possibili outcome pari al numero finale di shard.
-#

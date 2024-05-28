@@ -22,8 +22,24 @@ class PoissonRegHierarchy : public BaseHierarchy<PoissonRegHierarchy, PoissonReg
     updater = std::make_shared<PoissonRegUpdater>();
   };
 
-  void set_reg_coeffs(const Eigen::VectorXd & _reg_coeffs) {
-    like->set_reg_coeffs(_reg_coeffs);
+  void set_reg_coeffs(Eigen::VectorXd *reg_coeffs) {
+    like->set_reg_coeffs(reg_coeffs);
+  };
+
+  void set_covariates(Eigen::MatrixXd *covariates) {
+    like->set_covariates(covariates);
+  };
+
+  Eigen::VectorXd get_reg_coeffs() const {
+    return like->get_reg_coeffs();
+  };
+
+  double get_data_sum() const {
+    return like->get_data_sum();
+  };
+
+  double get_cov_exp_sum() const {
+    return like->get_cov_exp_sum();
   };
 
   void initialize_state() override {
@@ -41,15 +57,10 @@ class PoissonRegHierarchy : public BaseHierarchy<PoissonRegHierarchy, PoissonReg
                            const Eigen::RowVectorXd &covariate) const override {
     double offset = covariate(0);
     Eigen::RowVectorXd cov_vector = covariate(Eigen::seq(1,Eigen::last));
-    Eigen::VectorXd reg_coeffs = *(like->get_reg_coeffs());
+    Eigen::VectorXd reg_coeffs = like->get_reg_coeffs();
     auto gamma_params = spatialcmc::unpack_to<bayesmix::GammaDistribution>(hier_params->custom_state());
     double rate = gamma_params.rate() / (offset*std::exp(cov_vector*reg_coeffs));
     return stan::math::neg_binomial_lpmf(datum(0), gamma_params.shape(), rate);
-  };
-
-  // Compute cluster lpdf
-  double cluster_lpdf() const {
-    return like->get_cluster_lpdf();
   };
 
 };

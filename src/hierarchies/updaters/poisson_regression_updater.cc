@@ -8,6 +8,7 @@ std::shared_ptr<AbstractUpdater> PoissonRegUpdater::clone() const {
 
 AbstractUpdater::ProtoHypersPtr PoissonRegUpdater::compute_posterior_hypers(
     AbstractLikelihood& like, AbstractPriorModel& prior) {
+  // std::cout << "compute_posterior_hypers()" << std::endl;
   // Likelihood and Prior downcast
   auto& likecast = downcast_likelihood(like);
   auto& priorcast = downcast_prior(prior);

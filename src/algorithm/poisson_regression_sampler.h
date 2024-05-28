@@ -45,9 +45,9 @@ class PoissonRegressionSampler {
 
   // double n_accepted = 0;
   // double step_size = 0.05;
-  Eigen::VectorXd n_accepted;
+  Eigen::RowVectorXd n_accepted;
   // Eigen::VectorXd accepted_in_batch;
-  Eigen::VectorXd log_sigmas;
+  Eigen::RowVectorXd log_sigmas;
   int batch_size = 50;
   
   // will be useless
@@ -69,13 +69,13 @@ class PoissonRegressionSampler {
   spatialcmc::PoisRegAlgorithmState curr_state;
 
   // ALGORITHM STATE
-  std::shared_ptr<Eigen::VectorXd> regression_coefficients;
+  Eigen::VectorXd regression_coefficients;
   std::shared_ptr<Neal2Algorithm> partition_updater = std::make_shared<Neal2Algorithm>();
 
   // MISCELLANEOUS
   //! Turns on or off the descriptive output of the class methods
   bool verbose = true;
-  bool mh_verbose = false;
+  bool mh_verbose = true;
  
  public:
   
@@ -170,11 +170,31 @@ class PoissonRegressionSampler {
 
   // virtual std::shared_ptr<BaseAlgorithm> clone() const = 0;
 
-  std::vector<std::shared_ptr<AbstractHierarchy>> get_unique_values() const {
-    return partition_updater->get_unique_values();
-  };
+  // std::vector<std::shared_ptr<AbstractHierarchy>> get_unique_values() const {
+  //   return partition_updater->get_unique_values();
+  // };
 
  protected:
+ 
+  double reg_coeffs_target_lpdf(const Eigen::VectorXd & curr_state) {
+    double lpdf = 0;
+    // Get unique values and cluster allocations
+    auto unique_vals = partition_updater->get_unique_values();
+    auto clust_allocs = partition_updater->get_allocations();
+    // Joint likelihood
+    for (size_t i = 0; i < data.size(); i++) {
+      double offset = hier_covariates.row(i)(0);
+      Eigen::RowVectorXd cov_vector = hier_covariates.row(i)(Eigen::seq(1,Eigen::last));
+      double rate = spatialcmc::unpack_to<spatialcmc::PoissonState>(unique_vals[clust_allocs[i]]->get_state_proto()->custom_state()).rate();
+      lpdf += stan::math::poisson_log_lpmf(data.row(i)(0),log(offset)+log(rate)+cov_vector*curr_state);
+    }
+    // Prior
+    for (size_t l = 0; l < cov_size; l++) {
+      lpdf += stan::math::normal_lpdf(curr_state(l), 0, sqrt(10));
+    }
+    // Return
+    return lpdf;
+  }
 
   // double reg_coeffs_lpdf(const Eigen::VectorXd & curr_state) {
   //   // std::cout << "reg_coeffs_lpdf()" << std::endl;
@@ -194,7 +214,7 @@ class PoissonRegressionSampler {
   //       thetas(k) += hier_covariates->row(idx) * curr_state;
   //     }
   //     // thetas /= thetas.sum();
-  //     // std::cout << "prop_lambda: " << exp(stan::math::log_sum_exp(thetas)) << std::endl;
+  //     // std::cout << "prop_lambda: " << exp(stan::math::log_sum_eget_cxp(thetas)) << std::endl;
   //     // std::cout << "exp_version: " << stan::math::poisson_lpmf(data[i], exp(stan::math::log_sum_exp(thetas))) << std::endl;
   //     // lpdf += stan::math::poisson_log_lpmf(data[i], stan::math::log_sum_exp(thetas));
   //     lpdf += stan::math::multinomial_lpmf(hr_prov, stan::math::softmax(thetas));
@@ -225,12 +245,13 @@ class PoissonRegressionSampler {
   };
 
   void compute_sigma() {
+    // std::cout << "ITER: " << iter << std::endl;
     // Starting point
     if (iter == 0)
-      log_sigmas = log(sqrt(1e-2)) * Eigen::VectorXd::Ones(cov_size);
+      log_sigmas = std::log(1e-2) * Eigen::VectorXd::Ones(cov_size);
     // Increment iteration counter
     iter++;
-    // Adapt variances every bathc_size iterations
+    // Adapt variances every batch_size iterations
     if (iter % batch_size == 0) {
       double adapt = std::min(0.01, 1/sqrt(iter));
       for (size_t l = 0; l < cov_size; l++) {
@@ -240,18 +261,42 @@ class PoissonRegressionSampler {
           log_sigmas(l) -= adapt;
       }
     }
+    // Check
+    // std::cout << "sigmas: " << log_sigmas.array().exp() << std::endl;
   };
 
   // ALGORITHM FUNCTIONS
   //! Initializes all members of the class before running the algorithm
   void initialize() {
 
-    // Qualche check di sicurezza !!!
+    // Get random seed
     auto &rng = bayesmix::Rng::Instance().get();
+
+    // Check input data were provided
+    if (data.rows() == 0) {
+      throw std::invalid_argument("Data was not provided to algorithm");
+    }
+    if (hier_covariates.rows() == 0) {
+      throw std::invalid_argument("Covariates was not provided to algorithm");
+    } else {
+      if(hier_covariates.rows() != data.rows()) {
+        throw std::invalid_argument("Sizes of data and hierarchy covariates do not match");
+      }
+    }
+    if(adj_matrix.rows() == 0) {
+      throw std::invalid_argument("Adjacency Matrix was not provided to algorithm");
+    } else {
+      if(adj_matrix.rows() != adj_matrix.cols()){
+        throw std::invalid_argument("Adjacency Matrix is not a square matrix");
+      }
+      if(adj_matrix.rows() != data.rows()){
+        throw std::invalid_argument("Sizes of data and adjacency matrix do not match");
+      }
+    }
 
     // Initialize regression coefficients
     cov_size = hier_covariates.cols() - 1;
-    regression_coefficients = std::make_shared<Eigen::VectorXd>(Eigen::VectorXd::Zero(cov_size));
+    regression_coefficients = Eigen::VectorXd::Zero(cov_size);
     
     // Resize MH parameter
     log_sigmas.resize(cov_size);
@@ -261,7 +306,8 @@ class PoissonRegressionSampler {
     // 1. Hierarchy set-up
     auto hier = std::make_shared<PoissonRegHierarchy>();
     bayesmix::read_proto_from_file(hier_prior_file, hier->get_mutable_prior());
-    hier->set_reg_coeffs(*regression_coefficients);
+    hier->set_covariates(&hier_covariates);
+    hier->set_reg_coeffs(&regression_coefficients);
     partition_updater->set_hierarchy(hier);
     partition_updater->set_hier_covariates(hier_covariates);
     // 2. Mixing Set-up
@@ -272,60 +318,49 @@ class PoissonRegressionSampler {
     // 3. Algorithm Set-up
     partition_updater->set_data(data);
     partition_updater->set_init_num_clusters(init_num_clusters);
+    // 4. Initialize partition_updater
     partition_updater->initialize();
   };
 
   //! Prints a message at the beginning of `run()`
   void print_startup_message() const {
-    std::cout << "Running BNP Downscaling sampler... " << std::endl;
+    std::cout << "Running Poisson Regression sampler... " << std::endl;
   };
 
   //! Performs Gibbs sampling sub-step for partition update (usign updater)
   void sample_partition() { partition_updater->step(); };
 
   void sample_regression_coefficients() {
-    
-    // Define random seed and save current state
-    // auto &rng = bayesmix::Rng::Instance().get();
-    // // iter++;
-    // Eigen::VectorXd curr_state = *regression_coefficients;
-    // Eigen::VectorXd next_state = curr_state;
-    
-    // // Eigen::VectorXd prop_state = curr_state;
-    // // for (size_t l = 0; l < cov_size; l++) {
-    // //   prop_state(l) += stan::math::normal_rng(0, step_size, rng);
-    // // }
-
-    // // Compute adaptive standard deviations
-    // compute_sigma();
-    
-    // for (size_t l = 0; l < cov_size; l++) {
-    //   // Proposal 
-    //   Eigen::VectorXd prop_state = curr_state;
-    //   prop_state(l) += stan::math::normal_rng(0, exp(log_sigmas(l)), rng);
-      
-    //   // Compute log_rate
-    //   double log_arate = reg_coeffs_lpdf(prop_state) - 
-    //                      reg_coeffs_lpdf(curr_state) +
-    //                      reg_coeffs_prop_lpdf(curr_state, prop_state) - 
-    //                      reg_coeffs_prop_lpdf(prop_state, curr_state);
-
-    //   // Accept and update
-    //   if (std::log(stan::math::uniform_rng(0, 1, rng)) < log_arate) {
-    //     // std::cout << "I'm accepting!" << std::endl;
-    //     n_accepted(l)++;
-    //     next_state(l) = prop_state(l);
-    //   }
-    // }
-
-    // // Update accordingly
-    // update_reg_coeffs(next_state);
+    // Define random seed and increase iteration counter
+    auto &rng = bayesmix::Rng::Instance().get();
+    // Store copy of current and next state
+    Eigen::VectorXd curr_state = regression_coefficients;
+    Eigen::VectorXd next_state = curr_state;
+    // Compute adaptive standard deviations
+    compute_sigma();
+    // Conditional adaptive MH for each component of the vector
+    for (size_t l = 0; l < cov_size; l++) {
+      // Proposal for l-th component
+      Eigen::VectorXd prop_state = curr_state;
+      prop_state(l) += stan::math::normal_rng(0, exp(log_sigmas(l)), rng);
+      // Compute log acceptance rate
+      double log_arate = reg_coeffs_target_lpdf(prop_state) -
+                         reg_coeffs_target_lpdf(curr_state) +
+                         reg_coeffs_prop_lpdf(curr_state, prop_state) -
+                         reg_coeffs_prop_lpdf(prop_state, curr_state);
+      // Test for acceptance + update
+      if (std::log(stan::math::uniform_rng(0, 1, rng)) < log_arate) {
+        n_accepted(l)++; next_state(l) = prop_state(l);
+      }
+    }
+    // Update accordingly
+    regression_coefficients = next_state;
   };
 
-  void update_reg_coeffs(const Eigen::VectorXd & _reg_coeffs) {
-    // (*regression_coefficients) = _reg_coeffs;
-    // std::static_pointer_cast<PoissonGammaHierarchy>(partition_updater->get_unique_values()[0])->set_reg_coeffs(_reg_coeffs);
-  }
+  // void update_reg_coeffs(const Eigen::VectorXd & _reg_coeffs) {
+  //   // (*regression_coefficients) = _reg_coeffs;
+  //   // std::static_pointer_cast<PoissonGammaHierarchy>(partition_updater->get_unique_values()[0])->set_reg_coeffs(_reg_coeffs);
+  // }
 
   //! Prints a message at the end of `run()`
   void print_ending_message() const {
@@ -342,15 +377,15 @@ class PoissonRegressionSampler {
 
   //! Performs a single step of algorithm
   void step() {
+    sample_regression_coefficients();
     sample_partition();
-    // sample_regression_coefficients();
   }
 
   // AUXILIARY TOOLS
   //! Returns Protobuf object containing current state values and iter number
   spatialcmc::PoisRegAlgorithmState get_state_as_proto(const unsigned int iter) {
     spatialcmc::PoisRegAlgorithmState iter_out;
-    bayesmix::to_proto(*regression_coefficients, iter_out.mutable_regression_coefficients());
+    bayesmix::to_proto(regression_coefficients, iter_out.mutable_regression_coefficients());
     iter_out.mutable_partition()->CopyFrom(partition_updater->get_state_as_proto(iter));
     return iter_out;
   };
