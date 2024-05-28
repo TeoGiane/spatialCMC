@@ -33,8 +33,8 @@ hier_params =
   fixed_values {
     mean: 0
     var_scaling: 0.1
-    shape: 2.1
-    scale: 1.1
+    shape: 3
+    scale: 2
   }
   "
 
