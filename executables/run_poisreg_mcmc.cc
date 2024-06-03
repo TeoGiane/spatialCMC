@@ -13,17 +13,23 @@
 
 #define EMPTYSTR std::string("\"\"")
 
-bool check_args(const argparse::ArgumentParser &args) {
-  spatialcmc::check_file_is_readable(args.get<std::string>("--data-file"));
-  spatialcmc::check_file_is_readable(args.get<std::string>("--hier-cov-file"));
-  spatialcmc::check_file_is_readable(args.get<std::string>("--adj-matrix-file"));
-  spatialcmc::check_file_is_readable(args.get<std::string>("--algo-params-file"));
-  spatialcmc::check_file_is_readable(args.get<std::string>("--hier-prior-file"));
-  spatialcmc::check_file_is_readable(args.get<std::string>("--mix-prior-file"));
-  if (args.get<std::string>("--chain-file") != EMPTYSTR) {
-    bayesmix::check_file_is_writeable(args.get<std::string>("--chain-file"));
+void check_args(const argparse::ArgumentParser &args) {
+  try {
+    spatialcmc::check_file_is_readable(args.get<std::string>("--data-file"));
+    spatialcmc::check_file_is_readable(args.get<std::string>("--hier-cov-file"));
+    spatialcmc::check_file_is_readable(args.get<std::string>("--adj-matrix-file"));
+    spatialcmc::check_file_is_readable(args.get<std::string>("--algo-params-file"));
+    spatialcmc::check_file_is_readable(args.get<std::string>("--hier-prior-file"));
+    spatialcmc::check_file_is_readable(args.get<std::string>("--mix-prior-file"));
+    if (args.get<std::string>("--chain-file") != EMPTYSTR) {
+      bayesmix::check_file_is_writeable(args.get<std::string>("--chain-file"));
+    }
   }
-  return true;
+  catch(const std::runtime_error & err) {
+    std::cerr << err.what() << std::endl;
+    std::exit(1);
+  }
+  return;
 }
 
 int main(int argc, char *argv[]) {
@@ -65,7 +71,7 @@ int main(int argc, char *argv[]) {
   // Check parsed arguments
   check_args(args);
 
-
+  // Startup message
   std::cout << std::endl;
   std::cout << "Running run_poisson_regression_mcmc.cc" << std::endl;
 

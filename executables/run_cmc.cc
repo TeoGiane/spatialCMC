@@ -139,13 +139,13 @@ int main(int argc, char const *argv[]) {
   // Split data in shards
   unsigned int num_shards = std::set<int>(shard_allocation.cbegin(), shard_allocation.cend()).size();
   std::vector<std::deque<int>> global_numbering(num_shards);
-  std::vector<Eigen::MatrixXd> data_in_shards(num_shards);
-  std::vector<Shard> shards(num_shards);
+  // std::vector<Eigen::MatrixXd> data_in_shards(num_shards);
   for (size_t i = 0; i < data.size(); i++) {
     global_numbering[shard_allocation[i]].push_back(i);
   }
 
   // Generating shards in parallel
+  std::vector<Shard> shards(num_shards);
   #pragma omp parallel for num_threads(num_threads)
 	for (size_t i = 0; i < num_shards; i++) {
     shards[i].set_data(data(global_numbering[i], 0));

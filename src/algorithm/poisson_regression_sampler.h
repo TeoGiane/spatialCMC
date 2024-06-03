@@ -132,7 +132,10 @@ class PoissonRegressionSampler {
   //   unique_values.push_back(hier_);
   // }
 
-  void set_verbose(const bool verbose_) { verbose = verbose_; };
+  void set_verbose(const bool verbose_) {
+    verbose = verbose_;
+    mh_verbose = verbose_;
+  };
 
   //! Reads and sets algorithm parameters from an appropriate Protobuf message
   void read_params_from_proto(const bayesmix::AlgorithmParams &params) {
