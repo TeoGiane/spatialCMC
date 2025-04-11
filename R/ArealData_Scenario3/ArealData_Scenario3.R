@@ -7,7 +7,7 @@ library("parallel")
 library("sf")
 
 # Build spatialCMC (if necessary)
-build_spatialCMC()
+# build_spatialCMC()
 
 ###########################################################################
 # Auxiliary functions -----------------------------------------------------
@@ -21,10 +21,10 @@ generate_clust_allocs <- function(Nmun) {
     clust_allocs[rev((sqrt(Nmun)-i+1):(sqrt(Nmun))),i] <- 3
     clust_allocs[rev((sqrt(Nmun)-i+1):(sqrt(Nmun))),(sqrt(Nmun)-i+1)] <- 3
   }
-  clust_allocs[1:(sqrt(Nmun)/2-2),(sqrt(Nmun)/2-2):(sqrt(Nmun)/2+2)] <- 2
-  clust_allocs[1:(sqrt(Nmun)/5),(sqrt(Nmun)/2-2):(sqrt(Nmun)/2+2)] <- 3
-  clust_allocs[rev((sqrt(Nmun)/2+3):sqrt(Nmun)),(sqrt(Nmun)/2-2):(sqrt(Nmun)/2+2)] <- 3
-  clust_allocs[rev((4*sqrt(Nmun)/5+1):sqrt(Nmun)),(sqrt(Nmun)/2-2):(sqrt(Nmun)/2+2)] <- 2
+  clust_allocs[1:(sqrt(Nmun)/2-2),(sqrt(Nmun)/2-2):(sqrt(Nmun)/2+3)] <- 2
+  clust_allocs[1:(sqrt(Nmun)/5),(sqrt(Nmun)/2-2):(sqrt(Nmun)/2+3)] <- 3
+  clust_allocs[rev((sqrt(Nmun)/2+3):sqrt(Nmun)),(sqrt(Nmun)/2-2):(sqrt(Nmun)/2+3)] <- 3
+  clust_allocs[rev((4*sqrt(Nmun)/5+1):sqrt(Nmun)),(sqrt(Nmun)/2-2):(sqrt(Nmun)/2+3)] <- 2
   clust_allocs <- as.numeric(clust_allocs)
   return(clust_allocs)
 }
@@ -166,11 +166,21 @@ plt_psm <- ggplot(data = reshape2::melt(psm, c("x", "y"))) +
   geom_rect(xmin=0.5, ymin=0.5, xmax=Ndata+0.5, ymax=Ndata+0.5, fill=NA, color='gray25', linewidth=0.7) +
   theme_void() + theme(legend.position = "bottom") + coord_equal()
 
+# Plot - Data on the geometry
+plt_data <- ggplot() +
+  geom_sf(data = sf_mun, aes(fill=data), color='gray25', linewidth=0.5, alpha=0.75) +
+  # geom_sf(data = geom_prov, color='darkred', fill=NA, linewidth=2) +
+  # scale_fill_manual(values = c("1" = "steelblue", "2" = "darkorange", "3"='lightgreen')) +
+  scale_fill_gradient(low='steelblue', high='darkorange') +
+  guides(fill = guide_legend(title = "Cluster", title.position = "bottom", title.hjust=0.5,
+                             label.position = "bottom", keywidth = unit(1,"cm"))) +
+  theme_void() + theme(legend.position = "none")
+
 # Plot - True cluster on the geometry
 plt_true_clust <- ggplot() +
   geom_sf(data = sf_mun, aes(fill=true_clust), color='gray25', linewidth=0.5, alpha=0.75) +
   # geom_sf(data = geom_prov, color='darkred', fill=NA, linewidth=2) +
-  scale_fill_manual(values = c("1" = "steelblue", "2" = "darkorange")) +
+  scale_fill_manual(values = c("1" = "steelblue", "2" = "darkorange", "3"='lightgreen')) +
   guides(fill = guide_legend(title = "Cluster", title.position = "bottom", title.hjust=0.5,
                              label.position = "bottom", keywidth = unit(1,"cm"))) +
   theme_void() + theme(legend.position = "none")
@@ -179,17 +189,16 @@ plt_true_clust <- ggplot() +
 plt_best_clust <- ggplot() +
   geom_sf(data = sf_mun, aes(fill=best_clust), color='gray25', linewidth=0.5, alpha=0.75) +
   geom_sf(data = geom_prov, color='darkred', fill=NA, linewidth=2) +
-  scale_fill_manual(values = c("1" = "darkorange", "2" = "steelblue")) +
+  # scale_fill_manual(values = c("1" = "darkorange", "2" = "steelblue", "3"='lightgreen')) +
   guides(fill = guide_legend(title = "Cluster", title.position = "bottom", title.hjust=0.5,
                              label.position = "bottom", keywidth = unit(1,"cm"))) +
-  theme_void() + theme(legend.position = "none")
+  theme_void() # + theme(legend.position = "none")
 
 # Show posterior findings
 gridExtra::grid.arrange(grobs = list(plt_true_clust, plt_best_clust), ncol=2)
 
 # Plot - absolute difference between true and predictev values
 y_pred <- compute_y_pred(chain)
-# tmp <- apply(y_pred, 2, median)
 sf_mun$std_diff <- abs((colMeans(y_pred) - sf_mun$data)) / apply(y_pred, 2, sd)
 plt_diff <- ggplot() +
   geom_sf(data = sf_mun, aes(fill=std_diff), color='gray25', linewidth=0.5, alpha=0.75) +
