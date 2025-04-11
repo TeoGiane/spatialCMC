@@ -4,6 +4,7 @@
 .Rproj.user
 
 # Ignored folders
+.old/
 .vscode/
 build/
 input/
