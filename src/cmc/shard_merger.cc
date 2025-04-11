@@ -44,8 +44,8 @@ bayesmix::AlgorithmState ShardMerger::merge(size_t iter) {
 	std::shuffle(local_clusters.begin(), local_clusters.end(), rng);
 
 	// Check - OK
-	// std::cout << "Before Merging: " << std::endl << std::endl;
-	// for (auto &&lc : local_clusters) { lc.print(); }
+	std::cout << "Before Merging: " << std::endl << std::endl;
+	for (auto &&lc : local_clusters) { lc.print(); }
 	
 	// Merging at a fixed iteration
 	for (auto it = local_clusters.begin(); it != local_clusters.end(); ++it) {
@@ -55,7 +55,7 @@ bayesmix::AlgorithmState ShardMerger::merge(size_t iter) {
 		auto merge_condition = [this, &lhs] (ShardPartition & rhs) {
 			bool merge = (lhs.get_shard_name() != rhs.get_shard_name());
 			if(merge) { merge *= intersects(lhs, rhs); }
-			if(merge) { merge *= (2*compute_logBF(lhs, rhs) > 5.0); }
+			if(merge) { merge *= (2*compute_logBF(lhs, rhs) > 0.0); }
 			if(merge) { lhs.merge(rhs); }
 			return merge;
 		};

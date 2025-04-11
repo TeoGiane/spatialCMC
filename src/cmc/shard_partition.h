@@ -19,16 +19,17 @@ class ShardPartition {
 
  private:
 
+	// Type aliases
+	using HierHypers = bayesmix::AlgorithmState::HierarchyHypers;
+	using ClustState = bayesmix::AlgorithmState::ClusterState;
+
 	// Class members
 	Eigen::MatrixXd data;
 	size_t num_shard;
 	size_t num_cluster;
 	std::deque<unsigned int> global_clust_idx;
-	bayesmix::AlgorithmState::HierarchyHypers prior_params;
+	HierHypers prior_params;
 	std::shared_ptr<AbstractHierarchy> hierarchy;
-
-	// Type aliases
-	using ClustState = bayesmix::AlgorithmState::ClusterState;
 
 	public:
 
@@ -73,12 +74,12 @@ class ShardPartition {
 
 	// Generate n samples of the quantity of interest either from the prior
 	// or the full conditional of the hierarchy.
-	Eigen::VectorXd sample_qoi(size_t n, bool prior);
+	// Eigen::VectorXd sample_qoi(size_t n, bool prior);
 
-	private:
+	// private:
 
 	// Compute quantity of interest from sampled state of the hierarchy
-	double qoi_from_state(const ClustState & state) const ;
+	// double qoi_from_state(const ClustState & state) const ;
 
 };
 

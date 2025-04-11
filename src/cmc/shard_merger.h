@@ -29,7 +29,7 @@ class ShardMerger {
 
 	// Constructor 
 	ShardMerger(const std::vector<Shard> & _shards,
-							const std::vector<spatialcmc::MCMCChain> & _mcmc_chains,
+				      const std::vector<spatialcmc::MCMCChain> & _mcmc_chains,
 							const std::vector<std::deque<int>> & _data_idx_in_shard,
 							const Eigen::MatrixXd & _global_adj_matrix);
 
@@ -53,43 +53,43 @@ class ShardMerger {
 	double compute_logBF(ShardPartition & lhs, ShardPartition & rhs);
 
 	// Generate a Mone Carlo sample for the L^2 distance between density functions
-	double sample_l2_distance(ShardPartition & lhs, ShardPartition & rhs, bool prior) {
-		bayesmix::AlgorithmState::ClusterState state_lhs, state_rhs;
-		state_lhs = prior ? *(lhs.sample_prior()) : *(lhs.sample_full_cond());
-		state_rhs = prior ? *(rhs.sample_prior()) : *(rhs.sample_full_cond());
-		return compute_l2_distance(state_lhs, state_rhs);
-	}
+	// double sample_l2_distance(ShardPartition & lhs, ShardPartition & rhs, bool prior) {
+	// 	bayesmix::AlgorithmState::ClusterState state_lhs, state_rhs;
+	// 	state_lhs = prior ? *(lhs.sample_prior()) : *(lhs.sample_full_cond());
+	// 	state_rhs = prior ? *(rhs.sample_prior()) : *(rhs.sample_full_cond());
+	// 	return compute_l2_distance(state_lhs, state_rhs);
+	// }
 
 	// Compute L^2 distance between two densities in closed form, using the associated parameters
-	double compute_l2_distance(bayesmix::AlgorithmState::ClusterState & lhs, bayesmix::AlgorithmState::ClusterState & rhs) {
-		// Create buffer
-		double out = 0;
-		if (lhs.has_uni_ls_state() && rhs.has_uni_ls_state()) {
-			// Gaussian case
-			double lmean = lhs.uni_ls_state().mean(), lvar = lhs.uni_ls_state().var();
-			double rmean = rhs.uni_ls_state().mean(), rvar = rhs.uni_ls_state().var();
-			// Compute L2 distance squared
-			out = std::exp(-(stan::math::LOG_TWO + stan::math::LOG_SQRT_PI + 0.5*std::log(lvar)));
-			out += std::exp(-(stan::math::LOG_TWO + stan::math::LOG_SQRT_PI + 0.5*std::log(rvar)));
-			out -= 2 * std::exp(stan::math::normal_lpdf(0, lmean - rmean, std::sqrt(lvar + rvar)));
-			// Return
-			return out;
-		} else if (lhs.has_custom_state() && rhs.has_custom_state()) {
-			// Poisson case
-			spatialcmc::PoissonState unp_state; 
-			lhs.custom_state().UnpackTo(&unp_state); double lrate = unp_state.rate();
-			rhs.custom_state().UnpackTo(&unp_state); double rrate = unp_state.rate();
-			// Compute L2 distance squared
-			out = std::exp(-2*lrate + stan::math::log_modified_bessel_first_kind(0, 2*lrate));
-			out += std::exp(-2*rrate + stan::math::log_modified_bessel_first_kind(0, 2*rrate));
-			out -= 2*std::exp(-lrate -rrate + stan::math::log_modified_bessel_first_kind(0, 2*std::sqrt(lrate*rrate)));
-			// Return
-			return out;
-		} else {
-			// No available cluster state
-			throw std::runtime_error("compute_l2_distance() not implemented for this cluster state.");
-		}
-	}
+	// double compute_l2_distance(bayesmix::AlgorithmState::ClusterState & lhs, bayesmix::AlgorithmState::ClusterState & rhs) {
+	// 	// Create buffer
+	// 	double out = 0;
+	// 	if (lhs.has_uni_ls_state() && rhs.has_uni_ls_state()) {
+	// 		// Gaussian case
+	// 		double lmean = lhs.uni_ls_state().mean(), lvar = lhs.uni_ls_state().var();
+	// 		double rmean = rhs.uni_ls_state().mean(), rvar = rhs.uni_ls_state().var();
+	// 		// Compute L2 distance squared
+	// 		out = std::exp(-(stan::math::LOG_TWO + stan::math::LOG_SQRT_PI + 0.5*std::log(lvar)));
+	// 		out += std::exp(-(stan::math::LOG_TWO + stan::math::LOG_SQRT_PI + 0.5*std::log(rvar)));
+	// 		out -= 2 * std::exp(stan::math::normal_lpdf(0, lmean - rmean, std::sqrt(lvar + rvar)));
+	// 		// Return
+	// 		return out;
+	// 	} else if (lhs.has_custom_state() && rhs.has_custom_state()) {
+	// 		// Poisson case
+	// 		spatialcmc::PoissonState unp_state; 
+	// 		lhs.custom_state().UnpackTo(&unp_state); double lrate = unp_state.rate();
+	// 		rhs.custom_state().UnpackTo(&unp_state); double rrate = unp_state.rate();
+	// 		// Compute L2 distance squared
+	// 		out = std::exp(-2*lrate + stan::math::log_modified_bessel_first_kind(0, 2*lrate));
+	// 		out += std::exp(-2*rrate + stan::math::log_modified_bessel_first_kind(0, 2*rrate));
+	// 		out -= 2*std::exp(-lrate -rrate + stan::math::log_modified_bessel_first_kind(0, 2*std::sqrt(lrate*rrate)));
+	// 		// Return
+	// 		return out;
+	// 	} else {
+	// 		// No available cluster state
+	// 		throw std::runtime_error("compute_l2_distance() not implemented for this cluster state.");
+	// 	}
+	// }
 
 	// Generate a Mone Carlo sample for the L^2 distance between density functions
 	double sample_qoi(ShardPartition & lhs, ShardPartition & rhs, bool prior) {
