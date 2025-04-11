@@ -121,5 +121,11 @@ target_include_directories(run_cmc PUBLIC ${INCLUDE_PATHS})
 target_link_libraries(run_cmc PUBLIC ${LINK_LIBRARIES})
 target_compile_options(run_cmc PUBLIC ${COMPILE_OPTIONS})
 
+# Add run_poisreg_cmc executable
+add_executable(run_poisreg_cmc $<TARGET_OBJECTS:spatialCMC> executables/run_poisreg_cmc.cc)
+target_include_directories(run_poisreg_cmc PUBLIC ${INCLUDE_PATHS})
+target_link_libraries(run_poisreg_cmc PUBLIC ${LINK_LIBRARIES})
+target_compile_options(run_poisreg_cmc PUBLIC ${COMPILE_OPTIONS})
+
 # Add tests
 add_subdirectory(test)
