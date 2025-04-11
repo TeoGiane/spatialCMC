@@ -14,9 +14,9 @@ TEST(pois_reg_hierarchy, update_beta) {
     hier->get_mutable_prior()->CopyFrom(prior);
     hier->initialize();
     
-    // Set common regression coefficients
+    // Set common regression coefficients (only for hier)
     Eigen::VectorXd common_beta = Eigen::VectorXd::Zero(2);
-    hier->set_reg_coeffs(&common_beta);
+    hier->set_reg_coeffs(common_beta);
 
     // Clone hierarchy
     auto hier2 = hier->clone();
@@ -28,7 +28,8 @@ TEST(pois_reg_hierarchy, update_beta) {
     std::cout << "hier2->reg_coeffs(): " << std::static_pointer_cast<PoissonRegHierarchy>(hier2)->get_reg_coeffs().transpose() << std::endl;
     // hier->get_mutable_prior()->PrintDebugString();
 
-    common_beta = Eigen::VectorXd::Ones(2);
+    // *common_beta = Eigen::VectorXd::Ones(2);
+    hier->set_reg_coeffs(Eigen::VectorXd::Ones(2));
 
     std::cout << "Second: " << std::endl;
     std::cout << "common_beta: " << common_beta.transpose() << std::endl;
