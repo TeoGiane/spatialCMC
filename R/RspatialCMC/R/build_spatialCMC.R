@@ -40,18 +40,6 @@ build_spatialCMC <- function(nproc = ceiling(parallel::detectCores()/2), build_d
   }
   cat("\n")
 
-  # CONFIGURE = sprintf("mkdir -p %s && cd %s && cmake ..", build_dir, build_dir)
-  # tryCatch({
-  #   system(CONFIGURE, ignore.stderr = TRUE)
-  # },
-  # error = function(e) {
-  #   ERR_MSG <- "Something went wrong during configure. Failed with error:\n%s\n"
-  #   stop(sprintf(ERR_MSG, as.character(e)))
-  # })
-
-  # errlog = system(CONFIGURE, ignore.stdout = TRUE, ignore.stderr = TRUE)
-  # if(errlog != 0) { stop(sprintf("Something went wrong during configure: exit with status %d", errlog)) }
-
   # Make run_cmc executable
   cat("*** Building run_cmc executable ***\n")
   BUILD = sprintf("make run_cmc -j%d", nproc)
@@ -61,9 +49,6 @@ build_spatialCMC <- function(nproc = ceiling(parallel::detectCores()/2), build_d
     stop(sprintf(errmsg, BUILD, errlog))
   }
   cat("\n")
-
-  # errlog = system(BUILD)
-  # if(errlog != 0) { stop(sprintf("Something went wrong during build: exit with status %d", errlog)) }
 
   # Make run_mcmc executable
   cat("*** Building run_mcmc executable ***\n")
@@ -85,11 +70,15 @@ build_spatialCMC <- function(nproc = ceiling(parallel::detectCores()/2), build_d
   }
   cat("\n")
 
-  # errlog = system(BUILD)
-  # if(errlog != 0) { stop(sprintf("Something went wrong during build: exit with status %d", errlog)) }
-
-  # Create .renviron file
-  # renviron = system.file("RspatialCMC.Renviron", package = "RspatialCMC")
+  # Make run_poisreg_cmc executable
+  cat("*** Building run_poisreg_cmc executable ***\n")
+  BUILD = sprintf("make run_poisreg_cmc -j%d", nproc)
+  errlog <- withr::with_dir(build_dir, system(BUILD))
+  if (errlog != 0L) {
+    errmsg <- "Something went wrong during build: command '%s' exit with status %d"
+    stop(sprintf(errmsg, BUILD, errlog))
+  }
+  cat("\n")
 
   # Set RSPATIALCMC_EXE environment variable
   cat("*** Setting RSPATIALCMC_EXE environment variable ***\n")
@@ -102,6 +91,10 @@ build_spatialCMC <- function(nproc = ceiling(parallel::detectCores()/2), build_d
   # Set POISREG_MCMC_EXE environment variable
   cat("*** Setting POISREG_MCMC_EXE environment variable ***\n")
   write(x = sprintf("POISREG_MCMC_EXE=%s/run_poisreg_mcmc", build_dir), file = renviron, append = TRUE)
+
+  # Set POISREG_CMC_EXE environment variable
+  cat("*** Setting POISREG_CMC_EXE environment variable ***\n")
+  write(x = sprintf("POISREG_CMC_EXE=%s/run_poisreg_cmc", build_dir), file = renviron, append = TRUE)
 
   # Set TBB_PATH environment variable (for Windows)
   cat("*** Setting TBB_PATH environment variable ***\n")
