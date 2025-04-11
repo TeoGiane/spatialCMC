@@ -22,17 +22,21 @@ class PoissonRegHierarchy : public BaseHierarchy<PoissonRegHierarchy, PoissonReg
     updater = std::make_shared<PoissonRegUpdater>();
   };
 
-  void set_reg_coeffs(Eigen::VectorXd *reg_coeffs) {
-    like->set_reg_coeffs(reg_coeffs);
+  void set_reg_coeffs(const Eigen::VectorXd & _reg_coeffs) {
+    like->set_reg_coeffs(_reg_coeffs);
   };
 
-  void set_covariates(Eigen::MatrixXd *covariates) {
-    like->set_covariates(covariates);
+  void set_covariates(const Eigen::MatrixXd & _covariates) {
+    like->set_covariates(_covariates);
   };
 
   Eigen::VectorXd get_reg_coeffs() const {
     return like->get_reg_coeffs();
   };
+
+  Eigen::MatrixXd get_covariates(void) const {
+    return like->get_covariates();
+  }
 
   double get_data_sum() const {
     return like->get_data_sum();

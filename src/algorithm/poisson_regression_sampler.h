@@ -135,6 +135,7 @@ class PoissonRegressionSampler {
   void set_verbose(const bool verbose_) {
     verbose = verbose_;
     mh_verbose = verbose_;
+    partition_updater->set_verbose(verbose_);
   };
 
   //! Reads and sets algorithm parameters from an appropriate Protobuf message
@@ -251,12 +252,12 @@ class PoissonRegressionSampler {
     // std::cout << "ITER: " << iter << std::endl;
     // Starting point
     if (iter == 0)
-      log_sigmas = std::log(1e-2) * Eigen::VectorXd::Ones(cov_size);
+      log_sigmas = std::log(0.1) * Eigen::VectorXd::Ones(cov_size);
     // Increment iteration counter
     iter++;
     // Adapt variances every batch_size iterations
     if (iter % batch_size == 0) {
-      double adapt = std::min(0.01, 1/sqrt(iter));
+      double adapt = std::min(0.1, 1/sqrt(iter));
       for (size_t l = 0; l < cov_size; l++) {
         if (n_accepted(l) / iter >= 0.44)
           log_sigmas(l) += adapt;
@@ -309,8 +310,8 @@ class PoissonRegressionSampler {
     // 1. Hierarchy set-up
     auto hier = std::make_shared<PoissonRegHierarchy>();
     bayesmix::read_proto_from_file(hier_prior_file, hier->get_mutable_prior());
-    hier->set_covariates(&hier_covariates);
-    hier->set_reg_coeffs(&regression_coefficients);
+    hier->set_covariates(hier_covariates);
+    hier->set_reg_coeffs(regression_coefficients);
     partition_updater->set_hierarchy(hier);
     partition_updater->set_hier_covariates(hier_covariates);
     // 2. Mixing Set-up
@@ -381,6 +382,10 @@ class PoissonRegressionSampler {
   //! Performs a single step of algorithm
   void step() {
     sample_regression_coefficients();
+    for (auto & clust : partition_updater->get_unique_values()) {
+      auto clustcast = std::static_pointer_cast<PoissonRegHierarchy>(clust);
+      clustcast->set_reg_coeffs(regression_coefficients);
+    }
     sample_partition();
   }
 
