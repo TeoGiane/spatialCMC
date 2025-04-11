@@ -2,6 +2,7 @@
 *.sh
 !R/*/*.sh
 .Rproj.user
+.Rhistory
 
 # Ignored folders
 .old/
