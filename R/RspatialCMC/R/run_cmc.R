@@ -64,7 +64,7 @@ run_cmc <- function(data, geometry = NULL, shard_allocation, hier_type,
 
   # Compute adjacency matrix from geometry
   if (!is.null(geometry)) {
-    adj_matrix <- spdep::nb2mat(spdep::poly2nb(geometry, queen = F), style = "B", zero.policy = T)
+    adj_matrix <- suppressWarnings(spdep::nb2mat(spdep::poly2nb(geometry, queen = F), style = "B", zero.policy = T))
   }
 
   # Prepare files for data and outcomes
