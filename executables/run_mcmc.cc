@@ -15,6 +15,9 @@
 
 bool check_args(const argparse::ArgumentParser &args) {
 	spatialcmc::check_file_is_readable(args.get<std::string>("--data-file"));
+  if (args.get<std::string>("--hier-cov-file") != EMPTYSTR) {
+	  spatialcmc::check_file_is_readable(args.get<std::string>("--hier-cov-file"));
+  }
   if (args.get<std::string>("--adj-matrix-file") != EMPTYSTR) {
 	  spatialcmc::check_file_is_readable(args.get<std::string>("--adj-matrix-file"));
   }
@@ -34,6 +37,10 @@ int main(int argc, char *argv[]) {
 	args.add_argument("--data-file")
 		.required()
 		.help("Path to a .csv file containing the observations (one per row)");
+  args.add_argument("--hier-cov-file")
+    .required()
+    .default_value(EMPTYSTR)
+    .help("Path to a .csv file with the covariates used in the hierarchy");
   args.add_argument("--adj-matrix-file")
     .required()
     .default_value(EMPTYSTR)
@@ -79,6 +86,10 @@ int main(int argc, char *argv[]) {
 
   // Read data files
   auto data = bayesmix::read_eigen_matrix(args.get<std::string>("--data-file"));
+  Eigen::MatrixXd cov_matrix;
+  if (args.get<std::string>("--hier-cov-file") != EMPTYSTR){
+    cov_matrix = bayesmix::read_eigen_matrix(args.get<std::string>("--hier-cov-file"));
+  }
   Eigen::MatrixXd adj_matrix;
   if (args.get<std::string>("--adj-matrix-file") != EMPTYSTR){
     adj_matrix = bayesmix::read_eigen_matrix(args.get<std::string>("--adj-matrix-file"));
@@ -119,6 +130,10 @@ int main(int argc, char *argv[]) {
   algo->set_mixing(mixing);
   algo->set_data(data);
   algo->set_hierarchy(hierarchy);
+
+  if(hierarchy->is_dependent()){
+    algo->set_hier_covariates(cov_matrix);
+  }
 
   // Set covariates for mixing
   if (mixing->is_dependent()){
