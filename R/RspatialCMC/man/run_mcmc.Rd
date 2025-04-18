@@ -6,6 +6,7 @@
 \usage{
 run_mcmc(
   data,
+  covariates = NULL,
   geometry = NULL,
   hier_type,
   hier_params,
@@ -17,6 +18,8 @@ run_mcmc(
 }
 \arguments{
 \item{data}{A numeric vector or matrix of shape (n_samples, n_dim). These are the observations on which to fit the model.}
+
+\item{covariates}{A numeric matrix of shape (n_samples, n_covariates). These are the covariates on which to fit the model.}
 
 \item{geometry}{A \code{sfc} object of size \code{n_samples}. Default value is \code{NULL}.}
 

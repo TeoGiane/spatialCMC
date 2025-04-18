@@ -13,7 +13,8 @@ AbstractUpdater::ProtoHypersPtr PoissonGammaUpdater::compute_posterior_hypers(
   auto& priorcast = downcast_prior(prior);
   // Getting required quantities from likelihood and prior
   int card = likecast.get_card();
-  double data_sum = likecast.get_data_sum();
+  int data_sum = likecast.get_data_sum();
+  double offset_sum = likecast.get_offset_sum();
   auto hypers = priorcast.get_hypers();
   // No update possible
   if (card == 0) {
@@ -21,7 +22,7 @@ AbstractUpdater::ProtoHypersPtr PoissonGammaUpdater::compute_posterior_hypers(
   }
   // Compute posterior hyperparameters
   double shape_post = hypers.shape + data_sum;
-  double rate_post = hypers.rate + card;
+  double rate_post = hypers.rate + offset_sum;
   // Proto conversion
   ProtoHypers out;
   bayesmix::GammaDistribution unp_hypers;
