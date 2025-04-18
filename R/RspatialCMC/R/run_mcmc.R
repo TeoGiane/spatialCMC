@@ -3,6 +3,7 @@
 #' In this light version, this function calls the \code{run_mcmc} executable from a subprocess via \code{\link[base]{system}} command.
 #'
 #' @param data A numeric vector or matrix of shape (n_samples, n_dim). These are the observations on which to fit the model.
+#' @param covariates A numeric matrix of shape (n_samples, n_covariates). These are the covariates on which to fit the model.
 #' @param geometry A \code{sfc} object of size \code{n_samples}. Default value is \code{NULL}.
 #' @param hier_type A text string containing the enum label of the hierarchy to use in the algorithm.
 #' @param hier_params A text string containing the hyperparameters of the hierarchy or a file name where the hyperparameters are stored.
@@ -18,11 +19,13 @@
 #' \code{bayesmix::AlgorithmState}. Such object store a generic iteration of the MCMC chain.
 #'
 #' @export
-run_mcmc <- function(data, geometry = NULL, hier_type, hier_params,
+run_mcmc <- function(data, covariates = NULL, geometry = NULL, hier_type, hier_params,
                      mix_type, mix_params, algo_params, out_dir = NULL) {
 
   # Check input types
   if (!is.numeric(data)) { stop("'data' parameter must be a numeric vector or matrix") }
+  if (!is.null(covariates) & !is.numeric(covariates)) { stop("'covariates' parameter must be a numeric matrix, NULL otherwise") }
+  if (!is.null(covariates) & length(data) != nrow(covariates)) { stop("'data' and 'covariates' must have the same number of rows") }
   if (!is(geometry, "sfc") & !is.null(geometry)) { stop("'geometry' parameter must be an 'sfc' object, NULL otherwise") }
   if (!is.character(hier_type)){ stop("'hier_type' parameter must parameter must be a string") }
   if (!is.character(hier_params)) { stop("'hier_params' parameter must be a string") }
@@ -38,10 +41,9 @@ run_mcmc <- function(data, geometry = NULL, hier_type, hier_params,
   }
 
   # Set-up template for run_mcmc command
-  params = paste('--data-file %s --adj-matrix-file %s',
-                 '--algo-params-file %s --hier-type %s',
-                 '--hier-prior-file %s --mix-type %s',
-                 '--mix-prior-file %s --chain-file %s')
+  params = paste('--data-file %s --hier-cov-file %s --adj-matrix-file %s',
+                 '--algo-params-file %s --hier-type %s --hier-prior-file %s',
+                 '--mix-type %s --mix-prior-file %s --chain-file %s')
 
   # Set run_mcmc command template
   RUN_CMD = paste(MCMC_EXE, params)
@@ -62,6 +64,7 @@ run_mcmc <- function(data, geometry = NULL, hier_type, hier_params,
 
   # Prepare files for data and outcomes
   data_file = paste0(out_dir,'/data.csv'); file.create(data_file)
+  cov_matrix_file = paste0(out_dir, '/cov_matrix.csv'); file.create(cov_matrix_file)
   adj_matrix_file = paste0(out_dir, '/adj_matrix.csv'); file.create(adj_matrix_file)
   chain_name <- sprintf('/chain_%s.recordio', format(Sys.time(), "%Y%m%d-%H%M"))
   chain_file = paste0(out_dir, chain_name); file.create(chain_file)
@@ -74,6 +77,11 @@ run_mcmc <- function(data, geometry = NULL, hier_type, hier_params,
   # Set-up NULL filenames for arg-parse
   EMPTYSTR = '\\"\\"'
   write.table(data, file = data_file, sep = ",", col.names = F, row.names = F)
+  if(is.null(covariates)) {
+    cov_matrix_file <- EMPTYSTR
+  } else {
+    write.table(covariates, file = cov_matrix_file, sep = ",", col.names = F, row.names = F)
+  }
   if (is.null(geometry)) {
     adj_matrix_file <- EMPTYSTR
   } else {
@@ -81,7 +89,7 @@ run_mcmc <- function(data, geometry = NULL, hier_type, hier_params,
   }
 
   # Resolve run_mcmc command
-  CMD = sprintf(RUN_CMD, data_file, adj_matrix_file, algo_params_file,
+  CMD = sprintf(RUN_CMD, data_file, cov_matrix_file, adj_matrix_file, algo_params_file,
                 hier_type, hier_params_file, mix_type, mix_params_file, chain_file)
 
   # Execute run_mcmc
