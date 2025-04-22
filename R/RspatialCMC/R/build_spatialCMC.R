@@ -71,18 +71,18 @@ build_spatialCMC <- function(nproc = ceiling(parallel::detectCores()/2), build_d
   cat("\n")
 
   # Make run_poisreg_cmc executable
-  cat("*** Building run_poisreg_cmc executable ***\n")
-  BUILD = sprintf("make run_poisreg_cmc -j%d", nproc)
-  errlog <- withr::with_dir(build_dir, system(BUILD))
-  if (errlog != 0L) {
-    errmsg <- "Something went wrong during build: command '%s' exit with status %d"
-    stop(sprintf(errmsg, BUILD, errlog))
-  }
-  cat("\n")
+  # cat("*** Building run_poisreg_cmc executable ***\n")
+  # BUILD = sprintf("make run_poisreg_cmc -j%d", nproc)
+  # errlog <- withr::with_dir(build_dir, system(BUILD))
+  # if (errlog != 0L) {
+  #   errmsg <- "Something went wrong during build: command '%s' exit with status %d"
+  #   stop(sprintf(errmsg, BUILD, errlog))
+  # }
+  # cat("\n")
 
   # Set RSPATIALCMC_EXE environment variable
-  cat("*** Setting RSPATIALCMC_EXE environment variable ***\n")
-  write(x = sprintf("RSPATIALCMC_EXE=%s/run_cmc", build_dir), file = renviron, append = TRUE)
+  cat("*** Setting CMC_EXE environment variable ***\n")
+  write(x = sprintf("CMC_EXE=%s/run_cmc", build_dir), file = renviron, append = TRUE)
 
   # Set MCMC_EXE environment variable
   cat("*** Setting MCMC_EXE environment variable ***\n")
@@ -93,8 +93,8 @@ build_spatialCMC <- function(nproc = ceiling(parallel::detectCores()/2), build_d
   write(x = sprintf("POISREG_MCMC_EXE=%s/run_poisreg_mcmc", build_dir), file = renviron, append = TRUE)
 
   # Set POISREG_CMC_EXE environment variable
-  cat("*** Setting POISREG_CMC_EXE environment variable ***\n")
-  write(x = sprintf("POISREG_CMC_EXE=%s/run_poisreg_cmc", build_dir), file = renviron, append = TRUE)
+  # cat("*** Setting POISREG_CMC_EXE environment variable ***\n")
+  # write(x = sprintf("POISREG_CMC_EXE=%s/run_poisreg_cmc", build_dir), file = renviron, append = TRUE)
 
   # Set TBB_PATH environment variable (for Windows)
   cat("*** Setting TBB_PATH environment variable ***\n")
