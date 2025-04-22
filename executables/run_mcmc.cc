@@ -37,10 +37,6 @@ int main(int argc, char *argv[]) {
 	args.add_argument("--data-file")
 		.required()
 		.help("Path to a .csv file containing the observations (one per row)");
-  args.add_argument("--hier-cov-file")
-    .required()
-    .default_value(EMPTYSTR)
-    .help("Path to a .csv file with the covariates used in the hierarchy");
   args.add_argument("--adj-matrix-file")
     .required()
     .default_value(EMPTYSTR)
@@ -61,6 +57,10 @@ int main(int argc, char *argv[]) {
   args.add_argument("--mix-prior-file")
 		.required()
 		.help("Path to .asciipb file with the parameters of the mixing");
+  args.add_argument("--hier-cov-file")
+    .required()
+    .default_value(EMPTYSTR)
+    .help("Path to a .csv file with the covariates used in the hierarchy");
   args.add_argument("--chain-file")
     .required()
     .default_value(EMPTYSTR)

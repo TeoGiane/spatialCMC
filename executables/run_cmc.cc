@@ -23,9 +23,6 @@
 #include "mcmc_chain.pb.h"
 
 #include "cmc/local_cluster_merger.h"
-// #include "cmc/shard.h"
-// #include "cmc/shard_merger.h"
-// #include "cmc/shard_partition.h"
 #include "cmc/spatialcmc_utils.h"
 
 // Check ArgParse input arguments
@@ -33,9 +30,6 @@ void check_args(const argparse::ArgumentParser &args) {
   try {
     // Check if input files exist
     spatialcmc::check_file_is_readable(args.get<std::string>("--data-file"));
-    if (args.get<std::string>("--hier-cov-file") != EMPTYSTR) {
-      spatialcmc::check_file_is_readable(args.get<std::string>("--hier-cov-file"));
-    }
     if (args.get<std::string>("--adj-matrix-file") != EMPTYSTR) {
       spatialcmc::check_file_is_readable(args.get<std::string>("--adj-matrix-file"));
     }
@@ -43,6 +37,9 @@ void check_args(const argparse::ArgumentParser &args) {
     spatialcmc::check_file_is_readable(args.get<std::string>("--algo-params-file"));
     spatialcmc::check_file_is_readable(args.get<std::string>("--hier-prior-file"));
     spatialcmc::check_file_is_readable(args.get<std::string>("--mix-prior-file"));
+    if (args.get<std::string>("--hier-cov-file") != EMPTYSTR) {
+      spatialcmc::check_file_is_readable(args.get<std::string>("--hier-cov-file"));
+    }
     if (args.get<std::string>("--chain-file") != EMPTYSTR) {
       bayesmix::check_file_is_writeable(args.get<std::string>("--chain-file"));
     }
@@ -80,10 +77,6 @@ int main(int argc, char const *argv[]) {
   args.add_argument("--data-file")
     .required()
     .help("Path to a .csv file containing the observations (one per row)");
-  args.add_argument("--hier-cov-file")
-    .required()
-    .default_value(EMPTYSTR)
-    .help("Path to a .csv file with the covariates used in the hierarchy");
   args.add_argument("--adj-matrix-file")
     .required()
     .default_value(EMPTYSTR)
@@ -107,6 +100,10 @@ int main(int argc, char const *argv[]) {
   args.add_argument("--mix-prior-file")
     .required()
     .help("Path to .asciipb file with the parameters of the mixing");
+  args.add_argument("--hier-cov-file")
+    .required()
+    .default_value(EMPTYSTR)
+    .help("Path to a .csv file with the covariates used in the hierarchy");
   args.add_argument("--chain-file")
     .required()
     .default_value(EMPTYSTR)
@@ -161,7 +158,6 @@ int main(int argc, char const *argv[]) {
     hierarchy = factory_hier.create_object(args.get<std::string>("--hier-type"));
   }
   bayesmix::read_proto_from_file(args.get<std::string>("--hier-prior-file"), hierarchy->get_mutable_prior());
-  // std::cout << "Hierarchy Type: " << typeof(*hierarchy) << std::endl;
   
   // Create mixing object
   std::shared_ptr<AbstractMixing> mixing;
@@ -176,7 +172,6 @@ int main(int argc, char const *argv[]) {
   // Split data in shards
   unsigned int num_shards = std::set<int>(shard_allocation.cbegin(), shard_allocation.cend()).size();
   std::vector<std::deque<int>> global_numbering(num_shards);
-  // std::vector<Eigen::MatrixXd> data_in_shards(num_shards);
   for (size_t i = 0; i < data.size(); i++) {
     global_numbering[shard_allocation[i]].push_back(i);
   }
@@ -189,42 +184,23 @@ int main(int argc, char const *argv[]) {
   std::vector<std::shared_ptr<BaseAlgorithm>> shards(num_shards);
   auto & factory_algo = AlgorithmFactory::Instance();
   std::cout << "Generating shards ... ";
+  #pragma omp parallel for num_threads(num_threads)
   for (size_t i = 0; i < num_shards; i++) {
     shards[i] = factory_algo.create_object(algo_proto.algo_id());
     shards[i]->set_data(data(global_numbering[i], 0));
-    shards[i]->set_hier_covariates(cov_matrix(global_numbering[i], Eigen::all));
-    shards[i]->set_mix_covariates(adj_matrix(global_numbering[i], global_numbering[i]));
     shards[i]->set_hierarchy(hierarchy->clone());
-    // shards[i]->set_hierarchy_prior(args.get<std::string>("--hier-prior-file"));
+    if(hierarchy->is_dependent()){
+      shards[i]->set_hier_covariates(cov_matrix(global_numbering[i], Eigen::all));
+    }
     shards[i]->set_mixing(mixing->clone());
-    // shards[i]->set_mixing_prior(args.get<std::string>("--mix-prior-file"));
+    if(mixing->is_dependent()){
+      shards[i]->set_mix_covariates(adj_matrix(global_numbering[i], global_numbering[i]));
+    }
     shards[i]->read_params_from_proto(algo_proto);
     if(i != 0) 
       shards[i]->set_verbose(false);
   }
   std::cout << "Done" << std::endl;
-
-  // Generating shards in parallel
-  // std::vector<Shard> shards(num_shards);
-  // #pragma omp parallel for num_threads(num_threads)
-	// for (size_t i = 0; i < num_shards; i++) {
-  //   shards[i].set_data(data(global_numbering[i], 0));
-  //   if(hierarchy->is_dependent()){
-  //     algo->set_hier_covariates(cov_matrix);
-  //   }
-  //   if(mixing->is_dependent()){
-  //     shards[i].set_adjacency_matrix(adj_matrix(global_numbering[i], global_numbering[i]));
-  //   }
-  //   shards[i].set_sampler_parameters(args.get<std::string>("--algo-params-file"));
-  //   shards[i].set_hierarchy(hierarchy->clone(), args.get<std::string>("--hier-prior-file"));
-  //   shards[i].set_mixing(mixing->clone(), args.get<std::string>("--mix-prior-file"));
-  //   if(i != 0) 
-  //     shards[i].set_verbose(false);
-  // }
-
-  // Check - OK
-  // std::cout << "N° of shards: " << shards.size() << std::endl;
-  // for (auto && elem : shards) { elem.print(); std::cout << std::endl; }
 
   // Run MCMC samplers in each shard - in parallel
   std::vector<std::vector<bayesmix::AlgorithmState>> sharded_partitions(num_shards);
@@ -233,12 +209,6 @@ int main(int argc, char const *argv[]) {
     run_mcmc(shards[i], sharded_partitions[i]);
   }
   
-  // std::vector<spatialcmc::MCMCChain> chains(num_shards);
-  // #pragma omp parallel for num_threads(num_threads)
-  // for (size_t i = 0; i < num_shards; i++) {
-  //   chains[i] = shards[i].sample();
-  // }
-
   // Set-up shard merger
   LocalClusterMerger<AbstractHierarchy> partition_merger(sharded_partitions);
   partition_merger.set_hierarchy(hierarchy->clone());
@@ -248,9 +218,6 @@ int main(int argc, char const *argv[]) {
   partition_merger.set_global_numbering(global_numbering);
   partition_merger.set_seed(algo_proto.rng_seed());
   partition_merger.set_hierarchy_prior(args.get<std::string>("--hier-prior-file"));
-  // ShardMerger shard_merger(shards, chains, global_numbering, adj_matrix);
-  // std::vector<bayesmix::AlgorithmState> state_vect(shard_merger.get_num_iter());
-  // progresscpp::ProgressBar* bar = new progresscpp::ProgressBar(shard_merger.get_num_iter(), 60);
 
   // Merging shards in parallel
   std::cout << "Merging MCMC chains..." << std::endl;
@@ -258,7 +225,6 @@ int main(int argc, char const *argv[]) {
   progresscpp::ProgressBar* bar = new progresscpp::ProgressBar(partition_merger.get_num_iter(), 60);
   #pragma omp parallel for num_threads(num_threads)
   for (size_t i = 0; i < merged_states.size(); i++) {
-    // std::cout << "ITERATION: " << i << std::endl;
     merged_states[i].CopyFrom(partition_merger.merge(i));
 		++(*bar);
     #pragma omp critical

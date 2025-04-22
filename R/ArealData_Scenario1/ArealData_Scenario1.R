@@ -53,9 +53,10 @@ clust_allocs <- c(rep(c(rep(1,15),rep(2,15)),15),
                   rep(c(rep(2,15), rep(1,15)),15))
 set.seed(1996)
 data <- rpois(Ndata, gamma[clust_allocs])
+offsets <- rep(1, length(data))
 
 # Generate sf object
-df_mun <- data.frame("data" = data)
+df_mun <- data.frame("data" = data, "offsets" = offsets)
 sf_mun <- st_sf(df_mun, geometry = geom_mun)
 sf_mun$province_idx <- prov_allocs
 sf_mun$true_clust <- as.factor(clust_allocs)
@@ -70,8 +71,11 @@ sf_mun$true_clust <- as.factor(clust_allocs)
 ###########################################################################
 # SpatialCMC run ----------------------------------------------------------
 
+# Choose if MCMC or CMC
+run_cmc <- TRUE
+
 # Set hierarchy parameters
-hier_params =
+hier_prior =
   "
   fixed_values {
     shape: 3.25
@@ -80,7 +84,7 @@ hier_params =
   "
 
 # Set mixing parameters
-mix_params =
+mix_prior =
   "
   fixed_value {
     totalmass: 1.0
@@ -98,12 +102,16 @@ algo_params =
   init_num_clusters: 5
   "
 
-# Run SpatialCMC sampler
-fit <- run_cmc(sf_mun$data, st_geometry(sf_mun), sf_mun$province_idx,
-               "PoissonGamma", hier_params, "sPP", mix_params, algo_params)
-
-# fit_mcmc <- run_mcmc(sf_mun$data, st_geometry(sf_mun),
-#                      "PoissonGamma", hier_params, "sPP", mix_params, algo_params)
+# Run SpatialCMC sampler (either MCMC or CMC)
+if(run_cmc){
+  fit <- run_cmc(sf_mun$data, st_geometry(sf_mun), sf_mun$province_idx,
+                 algo_params, "PoissonGamma", hier_prior, "sPP", mix_prior,
+                 covariates = as.matrix(sf_mun$offsets))
+} else {
+  fit <- run_mcmc(sf_mun$data, st_geometry(sf_mun),
+                  algo_params, "PoissonGamma", hier_prior, "sPP", mix_prior,
+                  covariates = as.matrix(sf_mun$offsets))
+}
 
 ###########################################################################
 
@@ -119,7 +127,6 @@ unique_values <- get_unique_values(chain)
 
 # Compute findings from the approximated posterior distribution
 Nclust <- apply(cluster_allocs, 1, function(x){length(unique(x))})
-# psm <- salso::psm(cluster_allocs)
 sf_mun$best_clust <- as.factor(salso::salso(cluster_allocs, loss = "VI"))
 
 # Plot - Posterior number of clusters
@@ -140,27 +147,30 @@ plt_nclust
 #   theme_void() + theme(legend.position = "bottom") + coord_equal()
 
 # Plot - Best cluster on the geometry
-plt_true_clust <- ggplot() +
-  geom_sf(data = sf_mun, aes(fill=true_clust), color='gray25', linewidth=0.5, alpha=0.75) +
-  geom_sf(data = geom_prov, color='darkred', fill=NA, linewidth=2) +
-  scale_fill_manual(values = c("1" = "steelblue", "2" = "darkorange")) +
-  guides(fill = guide_legend(title = "Cluster", title.position = "bottom", title.hjust=0.5,
-                             label.position = "bottom", keywidth = unit(1,"cm"))) +
-  theme_void() + theme(legend.position = "none")
+# plt_true_clust <- ggplot() +
+#   geom_sf(data = sf_mun, aes(fill=true_clust), color='gray25', linewidth=0.5, alpha=0.75) +
+#   geom_sf(data = geom_prov, color='darkred', fill=NA, linewidth=2) +
+#   scale_fill_manual(values = c("1" = "steelblue", "2" = "darkorange")) +
+#   guides(fill = guide_legend(title = "Cluster", title.position = "bottom", title.hjust=0.5,
+#                              label.position = "bottom", keywidth = unit(1,"cm"))) +
+#   theme_void() + theme(legend.position = "none")
 
 plt_best_clust <- ggplot() +
   geom_sf(data = sf_mun, aes(fill=best_clust), color='gray25', linewidth=0.5, alpha=0.75) +
-  geom_sf(data = geom_prov, color='darkred', fill=NA, linewidth=2) +
   scale_fill_manual(values = c("1" = "steelblue", "2" = "darkorange")) +
   guides(fill = guide_legend(title = "Cluster", title.position = "bottom", title.hjust=0.5,
                              label.position = "bottom")) +
   theme_void() + theme(legend.position = "bottom")
-pdf("plt_best_clust.pdf", height = 4, width = 4); plt_best_clust; dev.off()
+if(run_cmc){
+  plt_best_clust <- plt_best_clust +
+    geom_sf(data = geom_prov, color='darkred', fill=NA, linewidth=2)
+}
+plt_best_clust
 
 # Show posterior findings
 # titletext <- grid::textGrob(bquote(alpha~"="~.(alpha)~","~lambda~"="~.(lambda)),
 #                             gp=grid::gpar(fontsize=16))
-gridExtra::grid.arrange(plt_nclust, plt_best_clust, ncol=2) #, top = titletext)
+# gridExtra::grid.arrange(plt_nclust, plt_best_clust, ncol=2) #, top = titletext)
 # plt_psm
 
 ###########################################################################
@@ -266,4 +276,4 @@ plot(points, pch=16, col='blue', add = TRUE)
 # tessellazioni contenenti più di un'area (il check è fatto in base ai centroidi)
 # Dopo di che, gli inviluppi convessi di tali tessellazioni vengono raggruppati
 # tramite estrazione casuale con numero di possibili outcome pari al numero finale di shard.
-# 
+#
