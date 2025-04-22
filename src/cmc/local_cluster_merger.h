@@ -20,12 +20,13 @@ class LocalClusterMerger {
 
   // Class members
   Eigen::MatrixXd const *data = nullptr;
-  Eigen::MatrixXd cov_matrix;
-  // Eigen::MatrixXd const *cov_matrix = nullptr;
+  // Eigen::MatrixXd cov_matrix;
+  Eigen::MatrixXd const *cov_matrix = nullptr;
   Eigen::MatrixXd const *adj_matrix = nullptr;
   std::vector<Eigen::VectorXd> reg_coeffs_chain;
   std::vector<std::vector<bayesmix::AlgorithmState>> cluster_chains;
   std::vector<std::deque<int>> global_numbering;
+  std::shared_ptr<AbstractHierarchy> hierarchy;
   std::string hier_prior_file;
 
   unsigned int global_card = 0;
@@ -39,8 +40,9 @@ class LocalClusterMerger {
 	~LocalClusterMerger() = default;
 
 	// Setters
+  void set_hierarchy(std::shared_ptr<AbstractHierarchy> _hierarchy) { hierarchy = _hierarchy; };
   void set_data(Eigen::MatrixXd const * _data_ptr) { data = _data_ptr; global_card = data->rows(); };
-  void set_cov_matrix(const Eigen::MatrixXd & _cov_matrix) { cov_matrix = _cov_matrix; };
+  void set_cov_matrix(Eigen::MatrixXd const * _cov_matrix_ptr) { cov_matrix = _cov_matrix_ptr; };
   void set_adj_matrix(Eigen::MatrixXd const * _adj_matrix_ptr) { adj_matrix = _adj_matrix_ptr; };
   void set_reg_coeffs(size_t iter, const Eigen::VectorXd & _reg_coeffs) {reg_coeffs_chain[iter] = _reg_coeffs;};
   void set_global_numbering(const std::vector<std::deque<int>> & _global_numbering) { global_numbering = _global_numbering; };
@@ -56,15 +58,15 @@ class LocalClusterMerger {
  private:
 
 	// Compute bayes factor for two spatial partitions merging candidates (+ aux functions)
-	double compute_logBF(LocalCluster<T> & lhs, LocalCluster<T> & rhs);
-	double sample_qoi(LocalCluster<T> & lhs, LocalCluster<T> & rhs, bool prior);
+	double compute_logBF(LocalCluster & lhs, LocalCluster & rhs);
+	double sample_qoi(LocalCluster & lhs, LocalCluster & rhs, bool prior);
 	double compute_qoi(bayesmix::AlgorithmState::ClusterState & lhs, bayesmix::AlgorithmState::ClusterState & rhs);
 
   // Chek if two local clusters intersects each other
-	bool intersects(LocalCluster<T> & lhs, LocalCluster<T> & rhs);
+	bool intersects(LocalCluster & lhs, LocalCluster & rhs);
 
 	// Generate spatial partitions form shards at a given iteration
-	std::deque<LocalCluster<T>> generate_local_clusters(const size_t & iter);
+	std::deque<LocalCluster> generate_local_clusters(const size_t & iter);
 
 };
 

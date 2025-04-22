@@ -29,7 +29,7 @@ bayesmix::AlgorithmState LocalClusterMerger<T>::merge(size_t iter) {
     // Get lhs as reference (just to make code a little bit more readable)
     auto & lhs = *it;
     // Lambda function that computes the merge condition (with automatic merging)
-    auto merge_condition = [this, &lhs] (LocalCluster<T> & rhs) {
+    auto merge_condition = [this, &lhs] (LocalCluster & rhs) {
       bool merge = (lhs.get_shard_label() != rhs.get_shard_label());
       if(merge) { merge *= intersects(lhs, rhs); }
       if(merge) { merge *= (2*compute_logBF(lhs, rhs) > 0.0); }
@@ -64,7 +64,7 @@ bayesmix::AlgorithmState LocalClusterMerger<T>::merge(size_t iter) {
 
 // Compute bayes factor for two spatial partitions merging candidates
 template<class T>
-double LocalClusterMerger<T>::compute_logBF(LocalCluster<T> & lhs, LocalCluster<T> & rhs) {
+double LocalClusterMerger<T>::compute_logBF(LocalCluster & lhs, LocalCluster & rhs) {
   // std::cout << "LocalClusterMerger<T>::compute_logBF()" << std::endl;
   // Number of Monte Carlo samples
   size_t n_sim = 100;
@@ -85,7 +85,7 @@ double LocalClusterMerger<T>::compute_logBF(LocalCluster<T> & lhs, LocalCluster<
 }
 
 template<class T>
-double LocalClusterMerger<T>::sample_qoi(LocalCluster<T> & lhs, LocalCluster<T> & rhs, bool prior) {
+double LocalClusterMerger<T>::sample_qoi(LocalCluster & lhs, LocalCluster & rhs, bool prior) {
   bayesmix::AlgorithmState::ClusterState state_lhs, state_rhs;
   state_lhs = prior ? *(lhs.sample_prior()) : *(lhs.sample_full_cond());
   state_rhs = prior ? *(rhs.sample_prior()) : *(rhs.sample_full_cond());
@@ -121,7 +121,7 @@ double LocalClusterMerger<T>::compute_qoi(bayesmix::AlgorithmState::ClusterState
 
 // Chek if two local clusters intersects each other
 template<class T>
-bool LocalClusterMerger<T>::intersects(LocalCluster<T> & lhs, LocalCluster<T> & rhs) {
+bool LocalClusterMerger<T>::intersects(LocalCluster & lhs, LocalCluster & rhs) {
   // std::cout << "intersects()" << std::endl;
   // Concatenating vertices
   auto idx = lhs.get_global_cluster_idx();
@@ -138,12 +138,12 @@ bool LocalClusterMerger<T>::intersects(LocalCluster<T> & lhs, LocalCluster<T> & 
 
 // Generate spatial partitions form shards at a given iteration
 template<class T>
-std::deque<LocalCluster<T>> LocalClusterMerger<T>::generate_local_clusters(const size_t & iter) {
+std::deque<LocalCluster> LocalClusterMerger<T>::generate_local_clusters(const size_t & iter) {
   // std::cout << "LocalClusterMerger<T>::generate_local_clusters()" << std::endl;
   // Create buffer for output
-  std::deque<LocalCluster<T>> local_clusters;
+  std::deque<LocalCluster> local_clusters;
   // Flag for covariates
-  bool requires_cov_matrix = LocalCluster<T>().has_dependent_hierarchy();
+  bool requires_cov_matrix = hierarchy->is_dependent();
   // std::cout << "requires cov matrix? " << std::boolalpha << requires_cov_matrix << std::endl;
   // Global cluster counter is initialized
   size_t clust_counter = 0;
@@ -154,7 +154,7 @@ std::deque<LocalCluster<T>> LocalClusterMerger<T>::generate_local_clusters(const
     // Get info from shards
     auto data_in_shard = (*data)(global_numbering[it], Eigen::all);
     auto adj_matrix_in_shard = (*adj_matrix)(global_numbering[it], Eigen::all);
-    auto cov_matrix_in_shard = (requires_cov_matrix) ? cov_matrix(global_numbering[it], Eigen::all) : (Eigen::MatrixXd(0,0));
+    auto cov_matrix_in_shard = (requires_cov_matrix) ? (*cov_matrix)(global_numbering[it], Eigen::all) : (Eigen::MatrixXd(0,0));
 
     // std::cout << "cov_matrix_in_shard: (" << cov_matrix_in_shard.rows() << "," << cov_matrix_in_shard.cols() << ")\n" << cov_matrix_in_shard << std::endl;
     // std::cout << "cov_matrix in shard: \n" << cov_matrix_in_shard << std::endl;
@@ -180,18 +180,20 @@ std::deque<LocalCluster<T>> LocalClusterMerger<T>::generate_local_clusters(const
     for (size_t k = 0; k < curr_state.cluster_states_size(); k++) {
       // std::cout << "k: " << k << std::endl;
       // Construct and fill spatial partition
-      LocalCluster<T> lc;
+      LocalCluster lc(hierarchy->deep_clone());
       lc.set_hierarchy_prior(hier_prior_file);
       // lc.initialize();
       lc.set_shard_label(it);
       lc.set_cluster_label(clust_counter + k);
       lc.set_global_cluster_idx(global_clust_idx[k]);
       if(requires_cov_matrix){
-        lc.set_cov_matrix(cov_matrix_in_shard(local_clust_idx[k], Eigen::all));
+        lc.set_data(data_in_shard(local_clust_idx[k], Eigen::all), cov_matrix_in_shard(local_clust_idx[k], Eigen::all));
+        // lc.set_cov_matrix(cov_matrix_in_shard(local_clust_idx[k], Eigen::all));
         // std::cout << "Cov matrix when set in lc:\n" << lc.get_cov_matrix() << std::endl;
-        lc.set_reg_coeffs(reg_coeffs_chain[iter]);
+        // lc.set_reg_coeffs(reg_coeffs_chain[iter]);
+      } else {
+        lc.set_data(data_in_shard(local_clust_idx[k], Eigen::all));
       }
-      lc.set_data(data_in_shard(local_clust_idx[k], Eigen::all));
       // lc.initialize();
       // if(requires_cov_matrix){
       //   lc.set_data(data_in_shard(local_clust_idx[k], Eigen::all), cov_matrix_in_shard(local_clust_idx[k], Eigen::all));
