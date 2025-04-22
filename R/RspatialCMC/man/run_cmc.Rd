@@ -6,25 +6,25 @@
 \usage{
 run_cmc(
   data,
-  covariates = NULL,
   geometry = NULL,
   shard_allocation,
+  algo_params,
   hier_type,
   hier_params,
   mix_type,
   mix_params,
-  algo_params,
+  covariates = NULL,
   out_dir = NULL
 )
 }
 \arguments{
 \item{data}{A numeric vector or matrix of shape (\code{n_samples}, \code{n_dim}). These are the observations on which to fit the model.}
 
-\item{covariates}{A numeric matrix of shape (n_samples, n_covariates). These are the covariates on which to fit the model.}
-
 \item{geometry}{A \code{sfc} object of size \code{n_samples}. This represents the geometry associated to each datum. Default value is \code{NULL}}
 
 \item{shard_allocation}{A numeric vector of size \code{n_samples}. This represents the shard in which the corresponding datum will be assigned.}
+
+\item{algo_params}{A text string containing the hyperparameters of the algorithm or a file name where the hyperparameters are stored.}
 
 \item{hier_type}{A text string containing the enum label of the hierarchy to use in the algorithm.}
 
@@ -34,9 +34,9 @@ run_cmc(
 
 \item{mix_params}{A text string containing the hyperparameters of the mixing or a file name where the hyperparameters are stored. A protobuf message of the corresponding type will be created and populated with the parameters.}
 
-\item{algo_params}{A text string containing the hyperparameters of the algorithm or a file name where the hyperparameters are stored.}
+\item{covariates}{(Optional) A numeric matrix of shape (n_samples, n_covariates). These are the covariates on which to fit the model (if needed).}
 
-\item{out_dir}{A string. If not \code{NULL}, is the folder where to store the output. If \code{NULL}, a temporary directory will be created and destroyed after the sampling is finished.}
+\item{out_dir}{(Optional) A string which represents the folder where to store the output.}
 }
 \value{
 A list whose elements are Google Protocol Buffer Messages of type \code{bayesmix::AlgorithmState}. Such object store a generic iteration of the MCMC chain.
