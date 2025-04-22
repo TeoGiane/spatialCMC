@@ -252,12 +252,12 @@ class PoissonRegressionSampler {
     // std::cout << "ITER: " << iter << std::endl;
     // Starting point
     if (iter == 0)
-      log_sigmas = std::log(0.1) * Eigen::VectorXd::Ones(cov_size);
+      log_sigmas = std::log(0.05) * Eigen::VectorXd::Ones(cov_size);
     // Increment iteration counter
     iter++;
     // Adapt variances every batch_size iterations
     if (iter % batch_size == 0) {
-      double adapt = std::min(0.1, 1/sqrt(iter));
+      double adapt = std::min(0.05, 1/sqrt(iter));
       for (size_t l = 0; l < cov_size; l++) {
         if (n_accepted(l) / iter >= 0.44)
           log_sigmas(l) += adapt;

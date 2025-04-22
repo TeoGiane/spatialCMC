@@ -111,14 +111,18 @@ algo_params =
   "
   algo_id: 'Neal2'
   rng_seed: 10092022
-  iterations: 4000
+  iterations: 5000
   burnin: 1000
   init_num_clusters: 5
   "
 
 # Run SpatialCMC sampler (CMC or MCMC)
-# fit <- pois_reg_cmc(data, offset, cov_matrix, geom_mun, sf_mun$province_idx, hier_params, mix_params, algo_params)
-fit <- pois_reg_mcmc(data, offset, cov_matrix, geom_mun, hier_params, mix_params, algo_params)
+run_cmc = TRUE
+if (run_cmc) {
+  fit <- pois_reg_cmc(data, offset, cov_matrix, geom_mun, sf_mun$province_idx, hier_params, mix_params, algo_params)
+} else {
+  fit <- pois_reg_mcmc(data, offset, cov_matrix, geom_mun, hier_params, mix_params, algo_params)
+}
 
 ###########################################################################
 
