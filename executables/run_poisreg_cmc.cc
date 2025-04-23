@@ -16,7 +16,7 @@
 
 // spatialcmc
 #include "algorithm/poisson_regression_sampler.h"
-#include "cmc/local_cluster_merger.h"
+#include "cmc/poisson_regression_local_cluster_merger.h"
 #include "cmc/regression_coefficients_merger.h"
 #include "cmc/spatialcmc_utils.h"
 #include "hierarchies/poisson_regression_hierarchy.h"
@@ -57,7 +57,7 @@ void run_mcmc(std::shared_ptr<PoissonRegressionSampler> algo,
   partition_chain.resize(coll->get_size());
   reg_coeffs_chain.resize(coll->get_size());
   // Fill the chains containers
-  spatialcmc::PoisRegAlgorithmState curr_state;
+  spatialcmc::PoissonRegAlgorithmState curr_state;
   for (int i = 0; i < coll->get_size(); i++) {
     coll->get_next_state(&curr_state);
     partition_chain[i].CopyFrom(curr_state.partition());
@@ -145,6 +145,7 @@ int main(int argc, char const *argv[]) {
   // Generating shards
   std::vector<std::shared_ptr<PoissonRegressionSampler>> shards(num_shards);
   std::cout << "Generating shards ... ";
+  #pragma omp parallel for num_threads(num_threads)
 	for (size_t i = 0; i < num_shards; i++) {
     shards[i] = std::make_shared<PoissonRegressionSampler>();
     shards[i]->set_data(data(global_numbering[i], 0));
@@ -158,10 +159,6 @@ int main(int argc, char const *argv[]) {
   }
   std::cout << "Done" << std::endl;
 
-  // Check - OK
-  // std::cout << "N° of shards: " << shards.size() << std::endl;
-  // for (auto && elem : shards) { elem.print(); std::cout << std::endl; }
-
   // Run MCMC samplers in each shard - in parallel
   std::vector<std::vector<bayesmix::AlgorithmState>> sharded_partitions(num_shards);
   std::vector<std::vector<bayesmix::Vector>> sharded_regression_coefficients(num_shards);
@@ -170,18 +167,15 @@ int main(int argc, char const *argv[]) {
     run_mcmc(shards[i], sharded_partitions[i], sharded_regression_coefficients[i]);
   }
 
-  // // CHECK
-  // for (size_t i = 0; i < num_shards; i++){
-  //   std::cout << "Shard: " << i << std::endl;
-  //   std::cout << "Size: " << sharded_partitions[i].size() << std::endl;
-  //   std::cout << "First Partition message:\n" << sharded_partitions[i][0].DebugString() << std::endl;
-  //   std::cout << "First Reg. Coeffs. message:\n" << sharded_regression_coefficients[i][0].DebugString() << std::endl;
-  // }
+  // Set up hierarchy for partition merger
+  std::shared_ptr<AbstractHierarchy> hierarchy = std::make_shared<PoissonRegHierarchy>();
+  bayesmix::read_proto_from_file(args.get<std::string>("--hier-prior-file"), hierarchy->get_mutable_prior());
 
   // Set-up partition merger
-  LocalClusterMerger<PoissonRegHierarchy> partition_merger(sharded_partitions);
+  PoissonRegLocalClusterMerger partition_merger(sharded_partitions);
+  partition_merger.set_hierarchy(hierarchy->clone());
   partition_merger.set_data(&data);
-  partition_merger.set_cov_matrix(cov_matrix);
+  partition_merger.set_cov_matrix(&cov_matrix);
   partition_merger.set_adj_matrix(&adj_matrix);
   partition_merger.set_global_numbering(global_numbering);
   partition_merger.set_seed(algo_proto.rng_seed());
@@ -192,7 +186,7 @@ int main(int argc, char const *argv[]) {
 
   // Merging shards in parallel
   std::cout << "Merging MCMC chains..." << std::endl;
-  std::vector<spatialcmc::PoisRegAlgorithmState> merged_states(partition_merger.get_num_iter());
+  std::vector<spatialcmc::PoissonRegAlgorithmState> merged_states(partition_merger.get_num_iter());
   progresscpp::ProgressBar* bar = new progresscpp::ProgressBar(partition_merger.get_num_iter(), 60);
   #pragma omp parallel for num_threads(num_threads)
   for (size_t i = 0; i < merged_states.size(); i++) {
@@ -208,7 +202,7 @@ int main(int argc, char const *argv[]) {
 	std::cout << "Done" << std::endl;
 
   // Serialization of the final chain
-  spatialcmc::PoisRegMCMC merged_chain;
+  spatialcmc::PoissonRegMCMC merged_chain;
   * merged_chain.mutable_state() = { merged_states.begin(), merged_states.end() };
   std::cout << "Successfully serialized final MCMC chain" << std::endl;
 

@@ -103,7 +103,7 @@ pois_reg_cmc <- function(data, offset, cov_matrix, geometry, shard_allocation,
   # Manage return object - Serialized MCMC chain
   tryCatch({
     RspatialCMC::import_protobuf_messages()
-    chain <- RProtoBuf::read(spatialcmc.PoisRegMCMC, chain_file)
+    chain <- RProtoBuf::read(spatialcmc.PoissonRegMCMC, chain_file)
     chain <- lapply(chain$state, function(s){ RProtoBuf::serialize(s, NULL) })
   },
   error = function(e) {

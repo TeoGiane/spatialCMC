@@ -36,5 +36,5 @@ void PoissonRegressionSampler::run(BaseCollector *collector) {
 // void PoissonRegressionSampler::set_data(const Eigen::VectorXi & data_) { data = data_; }
 
 void PoissonRegressionSampler::set_state_proto(const std::shared_ptr<google::protobuf::Message> state) {
-  curr_state.CopyFrom(google::protobuf::internal::down_cast<spatialcmc::PoisRegAlgorithmState &>(*state.get()));
+  curr_state.CopyFrom(google::protobuf::internal::down_cast<spatialcmc::PoissonRegAlgorithmState &>(*state.get()));
 }

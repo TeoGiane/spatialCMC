@@ -66,7 +66,7 @@ class PoissonRegressionSampler {
   Eigen::MatrixXd adj_matrix;
 
   // CURRENT STATE
-  spatialcmc::PoisRegAlgorithmState curr_state;
+  spatialcmc::PoissonRegAlgorithmState curr_state;
 
   // ALGORITHM STATE
   Eigen::VectorXd regression_coefficients;
@@ -391,8 +391,8 @@ class PoissonRegressionSampler {
 
   // AUXILIARY TOOLS
   //! Returns Protobuf object containing current state values and iter number
-  spatialcmc::PoisRegAlgorithmState get_state_as_proto(const unsigned int iter) {
-    spatialcmc::PoisRegAlgorithmState iter_out;
+  spatialcmc::PoissonRegAlgorithmState get_state_as_proto(const unsigned int iter) {
+    spatialcmc::PoissonRegAlgorithmState iter_out;
     bayesmix::to_proto(regression_coefficients, iter_out.mutable_regression_coefficients());
     iter_out.mutable_partition()->CopyFrom(partition_updater->get_state_as_proto(iter));
     return iter_out;
