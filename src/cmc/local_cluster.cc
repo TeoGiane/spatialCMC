@@ -1,11 +1,11 @@
 #include "local_cluster.h"
 
 void LocalCluster::set_shard_label(const size_t & _shard_label) {
-  shard_label = _shard_label;
+    shard_label = _shard_label;
 }
 
 void LocalCluster::set_cluster_label(const size_t &_cluster_label) {
-  cluster_label = _cluster_label;
+    cluster_label = _cluster_label;
 }
 
 void LocalCluster::set_data(const Eigen::MatrixXd & _data, const Eigen::MatrixXd & _covariates) {
@@ -22,12 +22,12 @@ void LocalCluster::set_data(const Eigen::MatrixXd & _data, const Eigen::MatrixXd
 }
 
 void LocalCluster::set_global_cluster_idx(const std::deque<unsigned int> &_global_clust_idx) {
-  global_clust_idx = _global_clust_idx;
+    global_clust_idx = _global_clust_idx;
 }
 
 void LocalCluster::set_hierarchy_prior(const std::string & _hier_prior_file) {
-  bayesmix::read_proto_from_file(_hier_prior_file, hierarchy->get_mutable_prior());
-  hierarchy->initialize();
+    bayesmix::read_proto_from_file(_hier_prior_file, hierarchy->get_mutable_prior());
+    hierarchy->initialize();
 }
 
 void LocalCluster::merge_with(const LocalCluster & rhs) {
@@ -39,9 +39,9 @@ void LocalCluster::merge_with(const LocalCluster & rhs) {
     // Update data in hierarchy here
     for(size_t i = 0; i < rhs.data.rows(); i++){
         if (requires_covariates) {
-        hierarchy->add_datum(data.rows() + i, rhs.data.row(i), false, rhs.covariates.row(i));
+            hierarchy->add_datum(data.rows() + i, rhs.data.row(i), false, rhs.covariates.row(i));
         } else {
-        hierarchy->add_datum(data.rows() + i, rhs.data.row(i), false);
+            hierarchy->add_datum(data.rows() + i, rhs.data.row(i), false);
         }
     }
 	// Merge data
@@ -51,7 +51,6 @@ void LocalCluster::merge_with(const LocalCluster & rhs) {
     if(requires_covariates){
         covariates.conservativeResize(covariates.rows() + rhs.covariates.rows(), covariates.cols());
         covariates.bottomRightCorner(rhs.covariates.rows(), covariates.cols()) = rhs.covariates;
-        // hierarchy->set_covariates(cov_matrix);
     }
 	// Merge global cluster indexes
 	global_clust_idx.insert(global_clust_idx.end(), rhs.global_clust_idx.begin(), rhs.global_clust_idx.end());

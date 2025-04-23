@@ -18,7 +18,7 @@
 
 class LocalCluster {
 
- private:
+ protected:
   // Type aliases
   using HierHypers = bayesmix::AlgorithmState::HierarchyHypers;
   using ClustState = bayesmix::AlgorithmState::ClusterState;
@@ -43,8 +43,7 @@ class LocalCluster {
   // Setters
   void set_shard_label(const size_t & _shard_label);
   void set_cluster_label(const size_t & _cluster_label);
-  void set_data(const Eigen::MatrixXd & _data, const Eigen::MatrixXd & _covariates = Eigen::MatrixXd(0,0));
-  // void set_reg_coeffs(const Eigen::VectorXd & _reg_coeffs) { reg_coeffs = _reg_coeffs; } //hierarchy->set_reg_coeffs(reg_coeffs); };
+  virtual void set_data(const Eigen::MatrixXd & _data, const Eigen::MatrixXd & _covariates = Eigen::MatrixXd(0,0));
   void set_global_cluster_idx(const std::deque<unsigned int> & _global_clust_idx);
   void set_hierarchy_prior(const std::string & _hier_prior_file);
   
@@ -56,7 +55,7 @@ class LocalCluster {
   unsigned int get_card() const { return hierarchy->get_card(); };
   
   // Merge current spatial partition with the input spatial partition
-  void merge_with(const LocalCluster & rhs);
+  virtual void merge_with(const LocalCluster & rhs);
   
   // Returns a sample from the prior distribution of the hierarchy
   std::shared_ptr<ClustState> sample_prior(void);
@@ -65,7 +64,7 @@ class LocalCluster {
   std::shared_ptr<ClustState> sample_full_cond(void);
   
   // Print utility for debug
-  void print();
+  virtual void print();
 
 };
 
