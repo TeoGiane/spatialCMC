@@ -5,11 +5,11 @@ import "matrix.proto";
 
 package spatialcmc;
 
-message PoisRegAlgorithmState {
+message PoissonRegAlgorithmState {
   bayesmix.Vector regression_coefficients = 1;
   bayesmix.AlgorithmState partition = 2;
 }
 
-message PoisRegMCMC {
-  repeated PoisRegAlgorithmState state = 1;
+message PoissonRegMCMC {
+  repeated PoissonRegAlgorithmState state = 1;
 }

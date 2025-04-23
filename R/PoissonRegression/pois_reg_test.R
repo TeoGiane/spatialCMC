@@ -117,7 +117,7 @@ algo_params =
   "
 
 # Run SpatialCMC sampler (CMC or MCMC)
-run_cmc = TRUE
+run_cmc = FALSE
 if (run_cmc) {
   fit <- pois_reg_cmc(data, offset, cov_matrix, geom_mun, sf_mun$province_idx, hier_params, mix_params, algo_params)
 } else {
@@ -130,7 +130,7 @@ if (run_cmc) {
 # Posterior inference -----------------------------------------------------
 
 # Deserialize chain
-chain <- sapply(fit, function(x){read(spatialcmc.PoisRegAlgorithmState,x)})
+chain <- sapply(fit, function(x){read(spatialcmc.PoissonRegAlgorithmState,x)})
 
 # Get quantity of interest
 beta_chain <- get_regression_coefficients(chain)
@@ -163,11 +163,14 @@ plt_betas <- gridExtra::grid.arrange(plt_beta1, plt_beta2)
 # Plot - Best cluster on the geometry
 plt_best_clust <- ggplot() +
   geom_sf(data = sf_mun, aes(fill=best_clust), color='gray25', linewidth=0.5, alpha=0.75) +
-  geom_sf(data = geom_prov, color='darkred', fill=NA, linewidth=2) +
   # scale_fill_manual(values = c("1" = "steelblue", "2" = "darkorange")) +
   guides(fill = guide_legend(title = "Cluster", title.position = "bottom", title.hjust=0.5,
                              label.position = "bottom")) +
   theme_void() # + theme(legend.position = "none")
+if(run_cmc){
+  plt_best_clust <- plt_best_clust +
+    geom_sf(data = geom_prov, color='darkred', fill=NA, linewidth=2)
+}
 plt_best_clust
 
 # NO COMMENTI QUI
