@@ -210,7 +210,7 @@ int main(int argc, char const *argv[]) {
   }
   
   // Set-up shard merger
-  LocalClusterMerger<AbstractHierarchy> partition_merger(sharded_partitions);
+  LocalClusterMerger partition_merger(sharded_partitions);
   partition_merger.set_hierarchy(hierarchy->clone());
   partition_merger.set_data(&data);
   partition_merger.set_cov_matrix(&cov_matrix);
