@@ -105,10 +105,10 @@ int main(int argc, char *argv[]) {
   if (args["--chain-file"] != EMPTYSTR) {    
     
     // Create container for the MCMC chain
-    spatialcmc::PoisRegMCMC chain;
+    spatialcmc::PoissonRegMCMC chain;
 
     // Fill the chain container
-    spatialcmc::PoisRegAlgorithmState state;
+    spatialcmc::PoissonRegAlgorithmState state;
     for (int i = 0; i < coll->get_size(); i++) {
       coll->get_next_state(&state);
       chain.add_state()->CopyFrom(state);
