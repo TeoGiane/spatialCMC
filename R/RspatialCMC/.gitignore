@@ -1,2 +1,6 @@
+# Ignored folders
+.Rproj.user/
+
 # Ignored files
-.Rproj.user
+*.Rproj
+*.Renviron

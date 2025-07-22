@@ -7,4 +7,5 @@ add_subdirectory(updaters)
 target_sources(spatialCMC PUBLIC
   empty_hierarchy.h
   poisson_gamma_hierarchy.h
+  poisson_regression_hierarchy.h
 )

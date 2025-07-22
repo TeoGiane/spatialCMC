@@ -109,8 +109,23 @@ target_include_directories(run_mcmc PUBLIC ${INCLUDE_PATHS})
 target_link_libraries(run_mcmc PUBLIC ${LINK_LIBRARIES})
 target_compile_options(run_mcmc PUBLIC ${COMPILE_OPTIONS})
 
+# Add run_poisreg_mcmc executable
+add_executable(run_poisreg_mcmc $<TARGET_OBJECTS:spatialCMC> executables/run_poisreg_mcmc.cc)
+target_include_directories(run_poisreg_mcmc PUBLIC ${INCLUDE_PATHS})
+target_link_libraries(run_poisreg_mcmc PUBLIC ${LINK_LIBRARIES})
+target_compile_options(run_poisreg_mcmc PUBLIC ${COMPILE_OPTIONS})
+
 # Add run_cmc executable
 add_executable(run_cmc $<TARGET_OBJECTS:spatialCMC> executables/run_cmc.cc)
 target_include_directories(run_cmc PUBLIC ${INCLUDE_PATHS})
 target_link_libraries(run_cmc PUBLIC ${LINK_LIBRARIES})
 target_compile_options(run_cmc PUBLIC ${COMPILE_OPTIONS})
+
+# Add run_poisreg_cmc executable
+add_executable(run_poisreg_cmc $<TARGET_OBJECTS:spatialCMC> executables/run_poisreg_cmc.cc)
+target_include_directories(run_poisreg_cmc PUBLIC ${INCLUDE_PATHS})
+target_link_libraries(run_poisreg_cmc PUBLIC ${LINK_LIBRARIES})
+target_compile_options(run_poisreg_cmc PUBLIC ${COMPILE_OPTIONS})
+
+# Add tests
+add_subdirectory(test)

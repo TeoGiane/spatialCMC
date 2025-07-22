@@ -1,10 +1,11 @@
 # Ignored files
 .Rhistory
+*.pdf
 
 # Ignored folders
 .old/
-ArealData_Scenario2/
 input/
 log/
 output/
 plots/
+COVID_data/

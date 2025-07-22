@@ -5,7 +5,7 @@
 
 #include "poisson_state.pb.h"
 
-#include "spatialcmc_utils.h"
+#include "cmc/spatialcmc_utils.h"
 #include "src/hierarchies/likelihoods/states/base_state.h"
 
 namespace State {
@@ -27,12 +27,8 @@ namespace State {
     }
 
     void set_from_proto(const ProtoState &state_, bool update_card) override {
-      if (update_card) {
-        card = state_.cardinality();
-      }
-      spatialcmc::PoissonState unp_state; state_.custom_state().UnpackTo(&unp_state);
-      // auto unp_state = spatialcmc::unpack_protobuf_any<spatialcmc::PoissonState>(state_.custom_state());
-      rate = unp_state.rate();
+      if (update_card) { card = state_.cardinality(); }
+      rate = spatialcmc::unpack_to<spatialcmc::PoissonState>(state_.custom_state()).rate();
     }
   };
 

@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+import "algorithm_state.proto";
+import "matrix.proto";
+
+package spatialcmc;
+
+message PoissonRegAlgorithmState {
+  bayesmix.Vector regression_coefficients = 1;
+  bayesmix.AlgorithmState partition = 2;
+}
+
+message PoissonRegMCMC {
+  repeated PoissonRegAlgorithmState state = 1;
+}

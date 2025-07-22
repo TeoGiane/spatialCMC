@@ -2,8 +2,10 @@
 *.sh
 !R/*/*.sh
 .Rproj.user
+.Rhistory
 
 # Ignored folders
+.old/
 .vscode/
 build/
 input/
