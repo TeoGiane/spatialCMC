@@ -117,7 +117,7 @@ algo_params =
   "
 
 # Run SpatialCMC sampler (CMC or MCMC)
-run_cmc = FALSE
+run_cmc = TRUE
 if (run_cmc) {
   fit <- pois_reg_cmc(data, offset, cov_matrix, geom_mun, sf_mun$province_idx, hier_params, mix_params, algo_params)
 } else {
