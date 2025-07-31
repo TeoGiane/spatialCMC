@@ -2,7 +2,7 @@
 suppressMessages(library("dplyr"))
 suppressMessages(library("lubridate"))
 suppressMessages(library("sf"))
-suppressMessages(library("ggplot2"))
+# suppressMessages(library("ggplot2"))
 
 # Get the script path and set working directory
 script_path <- commandArgs(trailingOnly=FALSE)
