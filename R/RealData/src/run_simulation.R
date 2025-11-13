@@ -5,6 +5,7 @@ library("sf")
 # Load Dataset (remove the NAs)
 full_data <- read_sf("input/full_dataset.shp")
 full_data <- full_data[which(full_data$ET != 0),]
+full_data <- full_data[full_data$NAME_REG == "Lombardia",]
 
 # Choose if MCMC or CMC
 use_cmc <- TRUE
@@ -13,8 +14,8 @@ use_cmc <- TRUE
 hier_prior =
   "
   fixed_values {
-    shape: 3
-    rate: 0.5
+    shape: 250
+    rate: 50
   }
   "
 
@@ -39,7 +40,9 @@ algo_params =
 
 # Run SpatialCMC sampler (either MCMC or CMC)
 if(use_cmc) {
-  fit <- run_cmc(data = as.numeric(full_data$T_20), geometry = st_geometry(full_data), shard_allocation = full_data$COD_REG-1,
+  shard_alloc <- rep(0,nrow(full_data))
+  # shard_alloc <- full_data$COD_REG-1
+  fit <- run_cmc(data = as.numeric(full_data$T_20), geometry = st_geometry(full_data), shard_allocation = shard_alloc,
                  algo_params = algo_params, "PoissonGamma", hier_prior,"sPP", mix_prior, covariates = as.matrix(full_data$ET))
 } else {
   fit <- run_mcmc(data = as.numeric(full_data$T_20), geometry = st_geometry(full_data),

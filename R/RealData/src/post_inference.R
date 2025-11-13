@@ -1,8 +1,8 @@
-library(ggplot2)
+library("ggplot2")
 library("RspatialCMC")
 library("sf")
 
-show_plot = TRUE
+show_plot = FALSE
 
 full_data <- read_sf("input/full_dataset.shp")
 full_data <- full_data[which(full_data$ET != 0),]
@@ -23,7 +23,7 @@ get_unique_values <- function(chain) {
   lapply(chain, function(state){extract_unique_values(state$cluster_states)})
 }
 
-load("chain.dat")
+load("output/alpha25_beta5/chain_mcmc.dat")
 
 # Deserialize chain
 chain <- sapply(fit, function(x){read(bayesmix.AlgorithmState,x)})
@@ -41,6 +41,8 @@ plt_nclust <- ggplot(data = data.frame(prop.table(table(Nclust))), aes(x=Nclust,
   geom_bar(stat = "identity", color=NA, linewidth=0, fill='white') +
   geom_bar(stat = "identity", color='steelblue', alpha=0.4, linewidth=0.7, fill='steelblue') +
   xlab("N° of Clusters") + ylab("Post. Prob.")
+
+# Show / Save Plot
 if(show_plot){
   x11(height = 4, width = 4); plt_nclust
 } else {
@@ -48,5 +50,13 @@ if(show_plot){
 }
 
 # Plot - Best cluster on the map
-ggplot() +
-  geom_sf(data = full_data, aes(fill=BEST_CLUST))
+plt_bestclus <- ggplot() +
+  geom_sf(data = full_data, aes(fill=BEST_CLUST)) +
+  scale_fill_brewer(palette = "Set1") + theme_void() + theme(legend.position = "none")
+
+# Show / Save Plot
+if(show_plot){
+  x11(height = 4, width = 4); plt_bestclus
+} else {
+  pdf("plt_bestclus.pdf", height = 4, width = 4); print(plt_bestclus); dev.off()
+}
