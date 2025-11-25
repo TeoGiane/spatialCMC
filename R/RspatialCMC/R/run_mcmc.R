@@ -1,4 +1,3 @@
-
 #' Run Spatial Markov Chain Monte Carlo sampler
 #'
 #' In this light version, this function calls the \code{run_mcmc} executable from a subprocess via \code{\link[base]{system}} command.
@@ -50,10 +49,9 @@ run_mcmc <- function(data, geometry = NULL, algo_params,
   # Use temporary directory if out_dir is not set
   if(is.null(out_dir)) {
     rngstr <- paste0(sample(letters, 7, replace=T), collapse = "")
-    out_dir = sprintf("%s/Rtmp-%s", dirname(MCMC_EXE), rngstr); dir.create(out_dir, recursive = T, showWarnings = F)
+    out_dir = sprintf("%s/Rtmp-%s", dirname(MCMC_EXE), rngstr); dir.create(out_dir, showWarnings = F)
     remove_out_dir = TRUE
   } else {
-    dir.create(out_dir, recursive = T)
     remove_out_dir = FALSE
   }
 
