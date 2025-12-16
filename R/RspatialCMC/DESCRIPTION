@@ -1,5 +1,5 @@
 Package: RspatialCMC
-Title: What the Package Does (One Line, Title Case)
+Title: Lightweight R interface to the `spatialCMC` library
 Version: 0.0.2
 Authors@R: 
     person("Matteo", "Gianella", , "matteo.gianella@polimi.it", role = c("aut", "cre"),
@@ -8,8 +8,7 @@ Description: What the package does (one paragraph).
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
-Depends: 
-    RProtoBuf (>= 0.4.20)
-Imports: 
+RoxygenNote: 7.3.3
+Imports:
+    RProtoBuf (>= 0.4.20),
     spdep (>= 1.3.1)
