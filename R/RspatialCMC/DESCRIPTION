@@ -1,6 +1,6 @@
 Package: RspatialCMC
 Title: What the Package Does (One Line, Title Case)
-Version: 0.0.1
+Version: 0.0.2
 Authors@R: 
     person("Matteo", "Gianella", , "matteo.gianella@polimi.it", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-3165-3579"))
