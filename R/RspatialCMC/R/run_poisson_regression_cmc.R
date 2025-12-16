@@ -57,7 +57,7 @@ pois_reg_cmc <- function(data, offset, cov_matrix, geometry, shard_allocation,
   # Use temporary directory if out_dir is not set
   if(is.null(out_dir)) {
     rngstr <- paste0(sample(letters, 7, replace=T), collapse = "")
-    out_dir = sprintf("%s/Rtmp-%s", dirname(POISREG_CMC_EXE), rngstr); dir.create(out_dir, showWarnings = F)
+    out_dir = sprintf("%s-%s", tempdir(), rngstr); dir.create(out_dir, recursive = T, showWarnings = F)
     remove_out_dir = TRUE
   } else {
     remove_out_dir = FALSE
@@ -102,9 +102,13 @@ pois_reg_cmc <- function(data, offset, cov_matrix, geometry, shard_allocation,
 
   # Manage return object - Serialized MCMC chain
   tryCatch({
-    RspatialCMC::import_protobuf_messages()
-    chain <- RProtoBuf::read(spatialcmc.PoissonRegMCMC, chain_file)
-    chain <- lapply(chain$state, function(s){ RProtoBuf::serialize(s, NULL) })
+    if(remove_out_dir){
+      RspatialCMC::import_protobuf_messages()
+      chain <- RProtoBuf::read(spatialcmc.PoissonRegMCMC, chain_file)
+      chain <- lapply(chain$state, function(s){ RProtoBuf::serialize(s, NULL) })
+    } else {
+      chain <- NULL
+    }
   },
   error = function(e) {
     # Print error

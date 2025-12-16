@@ -50,7 +50,6 @@ run_mcmc <- function(data, geometry = NULL, algo_params,
   if(is.null(out_dir)) {
     rngstr <- paste0(sample(letters, 7, replace=T), collapse = "")
     out_dir = sprintf("%s-%s", tempdir(), rngstr); dir.create(out_dir, recursive = T, showWarnings = F)
-    # out_dir = sprintf("%s/Rtmp-%s", dirname(MCMC_EXE), rngstr); dir.create(out_dir, recursive = T, showWarnings = F)
     remove_out_dir = TRUE
   } else {
     remove_out_dir = FALSE
@@ -65,7 +64,7 @@ run_mcmc <- function(data, geometry = NULL, algo_params,
   data_file = paste0(out_dir,'/data.csv'); file.create(data_file)
   cov_matrix_file = paste0(out_dir, '/cov_matrix.csv'); file.create(cov_matrix_file)
   adj_matrix_file = paste0(out_dir, '/adj_matrix.csv'); file.create(adj_matrix_file)
-  chain_name <- sprintf('/chain_%s.recordio', format(Sys.time(), "%Y%m%d-%H%M"))
+  chain_name <- sprintf('/mcmc_chain_%s.recordio', format(Sys.time(), "%Y%m%d-%H%M"))
   chain_file = paste0(out_dir, chain_name); file.create(chain_file)
 
   # Prepare protobuf configuration files
@@ -101,9 +100,13 @@ run_mcmc <- function(data, geometry = NULL, algo_params,
 
   # Manage return object - Serialized MCMC chain
   tryCatch({
-    RspatialCMC::import_protobuf_messages()
-    chain <- RProtoBuf::read(spatialcmc.MCMCChain, chain_file)
-    chain <- lapply(chain$state, function(s){ RProtoBuf::serialize(s, NULL) })
+    if(remove_out_dir){
+      RspatialCMC::import_protobuf_messages()
+      chain <- RProtoBuf::read(spatialcmc.MCMCChain, chain_file)
+      chain <- lapply(chain$state, function(s){ RProtoBuf::serialize(s, NULL) })
+    } else {
+      chain <- NULL
+    }
   },
   error = function(e) {
     # Print error
@@ -119,6 +122,6 @@ run_mcmc <- function(data, geometry = NULL, algo_params,
     unlink(out_dir, recursive = TRUE)
   }
 
-  # Return deserialized chain
+  # Return serialized chain (if out_dir is not specified)
   return(chain)
 }
