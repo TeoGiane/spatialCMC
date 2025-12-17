@@ -60,7 +60,7 @@ pois_reg_mcmc <- function(data, offset, cov_matrix, geometry,
   }
 
   # Compute adjacency matrix from geometry
-  adj_matrix <- spdep::nb2mat(spdep::poly2nb(geometry, queen = F), style = "B", zero.policy = T)
+  adj_matrix <- suppressWarnings(spdep::nb2mat(spdep::poly2nb(geometry, queen = F), style = "B", zero.policy = T))
 
   # Add offsets to covariance matrix
   hier_cov <- cbind(offset, cov_matrix)
