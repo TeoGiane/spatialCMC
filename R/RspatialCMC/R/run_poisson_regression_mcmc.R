@@ -52,8 +52,8 @@ pois_reg_mcmc <- function(data, offset, cov_matrix, geometry,
 
   # Use temporary directory if out_dir is not set
   if(is.null(out_dir)) {
-    rngstr <- paste0(sample(letters, 7, replace=T), collapse = "")
-    out_dir = sprintf("%s-%s", tempdir(), rngstr); dir.create(out_dir, recursive = T, showWarnings = F)
+    rnd_subdir <- sprintf("spcmctmp-%s", paste0(sample(letters, 7, replace=T), collapse = ""))
+    out_dir <- file.path(tempdir(), rnd_subdir); dir.create(out_dir, recursive = T, showWarnings = T)
     remove_out_dir = TRUE
   } else {
     remove_out_dir = FALSE
@@ -66,12 +66,12 @@ pois_reg_mcmc <- function(data, offset, cov_matrix, geometry,
   hier_cov <- cbind(offset, cov_matrix)
 
   # Prepare files for data and outcomes
-  data_file = paste0(out_dir,'/data.csv'); file.create(data_file)
-  hier_cov_file = paste0(out_dir, '/hier_cov.csv'); file.create(hier_cov_file)
-  adj_matrix_file = paste0(out_dir, '/adj_matrix.csv'); file.create(adj_matrix_file)
-  chain_name = sprintf('/chain_%s.recordio', format(Sys.time(), "%Y%m%d-%H%M"))
-  chain_file = paste0(out_dir, chain_name); file.create(chain_file)
-
+  data_file = file.path(out_dir,'data.csv'); file.create(data_file)
+  hier_cov_file = file.path(out_dir, 'hier_cov.csv'); file.create(hier_cov_file)
+  adj_matrix_file = file.path(out_dir, 'adj_matrix.csv'); file.create(adj_matrix_file)
+  chain_name = sprintf('mcmc_chain_%s.recordio', format(Sys.time(), "%Y%m%d-%H%M"))
+  chain_file = file.path(out_dir, chain_name); file.create(chain_file)
+  
   # Prepare protobuf configuration files
   hier_params_file = maybe_print_to_file(hier_params, "hier_params", out_dir)
   mix_params_file = maybe_print_to_file(mix_params, "mix_params", out_dir)
