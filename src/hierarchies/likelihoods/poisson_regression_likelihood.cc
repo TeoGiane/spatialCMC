@@ -3,8 +3,9 @@
 double PoissonRegLikelihood::get_cov_exp_sum() const {
   // std::cout << "PoissonRegLikelihood::get_cov_exp_sum()" << std::endl;
   std::vector<double> adds(card); unsigned int k = 0;
-  // std::cout << "reg_coeffs_ptr: " << (*reg_coeffs_ptr).transpose() << std::endl;
+  // std::cout << "reg_coeffs: " << reg_coeffs.transpose() << std::endl;
   for (auto && i : cluster_data_idx) {
+    // std::cout << "covariates:" << covariates.row(i) << std::endl;
     adds[k++] = log(covariates.row(i)(0)) + (covariates.row(i)(Eigen::seq(1,Eigen::last))) * reg_coeffs;
   }
   return std::exp(stan::math::log_sum_exp(adds));
