@@ -26,10 +26,10 @@ class PoissonRegLocalClusterMerger : public LocalClusterMerger {
   public:
     // Constructor & Destructor
     PoissonRegLocalClusterMerger(const std::vector<std::vector<bayesmix::AlgorithmState>> & _cluster_chains);
-	~PoissonRegLocalClusterMerger() = default;
+	  ~PoissonRegLocalClusterMerger() = default;
     // Setters
     void set_reg_coeffs(size_t iter, const Eigen::VectorXd & _reg_coeffs) {reg_coeffs_chain[iter] = _reg_coeffs;};
-	// Merge local clusters at a given iteration
+	  // Merge local clusters at a given iteration
     bayesmix::AlgorithmState merge(size_t iter);
 
   private:
