@@ -9,14 +9,14 @@
 // bayesmix
 #include <src/includes.h>
 
-#pragma omp declare reduction (+: Eigen::MatrixXd: omp_out=omp_out+omp_in) \
-        initializer(omp_priv=Eigen::MatrixXd::Zero(omp_orig.rows(),omp_orig.cols()))
+#pragma omp declare reduction (+: Eigen::VectorXd: omp_out=omp_out+omp_in) \
+        initializer(omp_priv=Eigen::VectorXd::Zero(omp_orig.size()))
 
 class RegressionCoefficientsMerger {
   private:
-    std::vector<std::vector<bayesmix::Vector>> reg_coeffs_chains;
-    std::vector<Eigen::MatrixXd> weights;
-    Eigen::MatrixXd inv_weights_sum;
+    std::vector<Eigen::MatrixXd> reg_coeff_chains;
+    std::vector<Eigen::VectorXd> weights;
+    Eigen::VectorXd weights_sum;
     unsigned int num_shards;
     unsigned int num_iter;
     unsigned int cov_size;
@@ -31,7 +31,7 @@ class RegressionCoefficientsMerger {
     bayesmix::Vector merge(size_t iter);
     private:
     // Compute sample variance
-    Eigen::MatrixXd compute_sample_variance(const std::vector<bayesmix::Vector> & reg_coeff_chain);
+    Eigen::VectorXd compute_sample_variance(const Eigen::MatrixXd & reg_coeff_chain);
 };
 
 #endif // SPATIALCMC_CMC_REGRESSION_COEFFICIENTS_MERGER_H_

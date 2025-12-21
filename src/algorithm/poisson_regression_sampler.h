@@ -300,7 +300,7 @@ class PoissonRegressionSampler {
 
     // Initialize regression coefficients
     cov_size = hier_covariates.cols() - 1;
-    regression_coefficients = Eigen::VectorXd::Zero(cov_size);
+    regression_coefficients = 1e-2 * Eigen::VectorXd::Ones(cov_size);
     
     // Resize MH parameter
     log_sigmas.resize(cov_size);
